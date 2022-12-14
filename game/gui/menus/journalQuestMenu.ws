@@ -116,7 +116,13 @@ class CR4JournalQuestMenu extends CR4ListBaseMenu
 		var tempQuests					: array<CJournalBase>;
 		var questTemp					: CJournalQuest;
 		var i							: int;
+
 		
+		var mainArr, sideArr, monsterArr, treasureArr, ep1Arr, ep2Arr, completedArr, failedArr : array<CJournalQuest>;
+		var l_questStatus			: EJournalStatus;
+		var l_questType				: int;
+		
+
 		m_journalManager.GetActivatedOfType( 'CJournalQuest', tempQuests );
 		
 		initialTrackedQuest = m_journalManager.GetTrackedQuest();
@@ -132,7 +138,176 @@ class CR4JournalQuestMenu extends CR4ListBaseMenu
 				
 			}
 		}
+		
+		
+		
+		if( allQuests.Size() > 0 )
+		{
+			
+			for( i = 0; i < allQuests.Size(); i+= 1 )
+			{
+				l_questType	= allQuests[i].GetType();
+				l_questStatus = m_journalManager.GetEntryStatus(allQuests[i]);
+
+				if (l_questStatus == JS_Active)
+				{
+					switch (l_questType)
+					{
+					case 0: 
+					case 1: 
+						mainArr.PushBack(allQuests[i]);
+						break;
+					case 2: 
+						sideArr.PushBack(allQuests[i]);
+						break;
+					case 3: 
+						monsterArr.PushBack(allQuests[i]);
+						break;
+					case 4: 
+						treasureArr.PushBack(allQuests[i]);
+						break;
+					case 5: 
+						ep1Arr.PushBack(allQuests[i]);
+						break;
+					case 6: 
+						ep2Arr.PushBack(allQuests[i]);
+						break;
+					}
+				}
+				else if (l_questStatus == JS_Success)
+				{
+					completedArr.PushBack(allQuests[i]);
+				}
+				else if (l_questStatus == JS_Failed)
+				{
+					failedArr.PushBack(allQuests[i]);
+				}
+			}
+			
+			
+			mainArr = SortArrayByWorld(mainArr);
+			sideArr = SortArrayByWorld(sideArr);
+			monsterArr = SortArrayByWorld(monsterArr);
+			treasureArr = SortArrayByWorld(treasureArr);
+			ep1Arr = SortArrayByWorld(ep1Arr);
+			ep2Arr = SortArrayByWorld(ep2Arr);
+			completedArr = SortArrayAlphabetically(completedArr);
+			failedArr = SortArrayAlphabetically(failedArr);
+
+			
+			allQuests.Clear();
+			for( i = 0; i < mainArr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(mainArr[i]);
+			}
+			for( i = 0; i < sideArr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(sideArr[i]);
+			}
+			for( i = 0; i < monsterArr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(monsterArr[i]);
+			}
+			for( i = 0; i < treasureArr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(treasureArr[i]);
+			}
+			for( i = 0; i < ep1Arr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(ep1Arr[i]);
+			}
+			for( i = 0; i < ep2Arr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(ep2Arr[i]);
+			}
+			for( i = 0; i < completedArr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(completedArr[i]);
+			}
+			for( i = 0; i < failedArr.Size(); i+= 1 )
+			{
+				allQuests.PushBack(failedArr[i]);
+			}
+		}
+		
 	}
+
+	
+	private function SortArrayByWorld( arr : array<CJournalQuest> ) : array<CJournalQuest>
+	{
+		var tempArray, curWorldArr, nonCurWorldArr : array<CJournalQuest>;
+		var trackedQuest : CJournalQuest;
+		var i : int;
+		var currentArea	 : EAreaName;
+
+		currentArea = theGame.GetCommonMapManager().GetCurrentJournalArea();
+
+		for( i = 0; i < arr.Size(); i+= 1 )
+		{
+			if( m_journalManager.GetTrackedQuest().guid == arr[i].guid &&  m_journalManager.GetEntryStatus(arr[i]) == JS_Active )
+			{
+				trackedQuest = arr[i];
+			}
+			if(arr[i].GetWorld() == currentArea)
+			{
+				curWorldArr.PushBack(arr[i]);
+			}
+			else
+			{
+				nonCurWorldArr.PushBack(arr[i]);
+			}
+		}
+
+		if(trackedQuest)
+		{
+			tempArray.PushBack(trackedQuest);
+		}
+		for( i = 0; i < curWorldArr.Size(); i+= 1 )
+		{
+			if(trackedQuest != curWorldArr[i])
+			{
+				tempArray.PushBack(curWorldArr[i]);
+			}
+		}
+		for( i = 0; i < nonCurWorldArr.Size(); i+= 1 )
+		{
+			if(trackedQuest != nonCurWorldArr[i])
+			{
+				tempArray.PushBack(nonCurWorldArr[i]);
+			}			
+		}
+
+		return tempArray;
+	}
+
+	private function SortArrayAlphabetically( arr : array<CJournalQuest> ) : array<CJournalQuest>
+	{
+		var tempArray : array<CJournalQuest>;
+		var sortingArray : array<string>;
+		var i, j : int;
+
+		for( i = 0; i < arr.Size(); i+= 1 )
+		{
+			sortingArray.PushBack(GetLocStringById( arr[i].GetTitleStringId() ));
+		}
+		ArraySortStrings( sortingArray );
+		for( i = 0; i < sortingArray.Size(); i+= 1 )
+		{
+			for( j = 0; j < arr.Size(); j+= 1 )
+			{
+				if( sortingArray[i] == GetLocStringById( arr[j].GetTitleStringId() ) )
+				{
+					tempArray.PushBack(arr[j]);
+					break;
+				}
+			}
+		}
+
+		return tempArray;
+	}
+	
+
+
 		
 	event OnObjectiveRead( tag : name )
 	{
@@ -289,7 +464,7 @@ class CR4JournalQuestMenu extends CR4ListBaseMenu
 		var l_questStatus			: EJournalStatus;
 		var l_Tag					: name;
 		var questLevel				: int;
-		
+
 		l_questsFlashArray = m_flashValueStorage.CreateTempFlashArray();
 		length = allQuests.Size();
 		
@@ -312,7 +487,7 @@ class CR4JournalQuestMenu extends CR4ListBaseMenu
 				}
 			}
 		}
-		
+
 		if( l_questsFlashArray.GetLength() > 0 )
 		{
 			m_flashValueStorage.SetFlashArray( DATA_BINDING_NAME, l_questsFlashArray );

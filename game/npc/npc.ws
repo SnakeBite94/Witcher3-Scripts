@@ -227,6 +227,9 @@ statemachine import class CNewNPC extends CActor
 		{
 			ResetCombatStartTime();
 			ResetCombatPartStartTime();
+			
+			
+			StopEffectIfActive('hand_fx');
 		}		
 	}
 	
@@ -297,7 +300,9 @@ statemachine import class CNewNPC extends CActor
 			{
 				levelDiff = GetLevel() - witcher.GetLevel();
 				
-				if ( levelDiff < theGame.params.LEVEL_DIFF_DEADLY )
+				
+				
+				if ( levelDiff < 100 )
 					this.SetDodgeFeedback( true );
 			}
 			
@@ -602,8 +607,29 @@ statemachine import class CNewNPC extends CActor
 					}
 				}
 			}	
-		}		
+		}	
+
+		
+		if( IsHorse() )
+		{
+			AddTimer('NGE_HorseEquipWeaponHack',0.5f,false);			
+		}
+		
 	}
+	
+	
+	
+	timer function NGE_HorseEquipWeaponHack(dt:float,id:int)
+	{
+		var arr : array<SItemUniqueId>;	
+	
+		arr = GetInventory().GetItemsByName('mon_horse_weapon');
+		if(arr.Size() <= 0)
+			arr = GetInventory().AddAnItem('mon_horse_weapon');
+		EquipItem(arr[0],EES_InvalidSlot, true);
+	}
+	
+	
 	
 	protected function SetAbilityManager()
 	{
@@ -1108,6 +1134,29 @@ statemachine import class CNewNPC extends CActor
 	
 	var fistFightForcedFromQuest : bool; 
 	
+	
+	
+	private var initialPointsRes 		: float;
+	private var initialForcePercRes 	: float;
+	private var initialBurningPercRes 	: float;
+	private var initialWillPercRes 		: float;
+	private var initialShockPercRes 	: float;
+	
+	public function CheckInitialPercResistances()
+	{
+		GetResistValue( CDS_ForceRes, initialPointsRes, initialForcePercRes );
+		GetResistValue( CDS_BurningRes, initialPointsRes, initialBurningPercRes );
+		GetResistValue( CDS_WillRes, initialPointsRes, initialWillPercRes );
+		GetResistValue( CDS_ShockRes, initialPointsRes, initialShockPercRes );
+	}
+	
+	public function GetInitialForceResistancePerc() 	: float { return initialForcePercRes; }
+	public function GetInitialBurningResistancePerc() 	: float { return initialBurningPercRes; }
+	public function GetInitialWillResistancePerc() 		: float { return initialWillPercRes; }
+	public function GetInitialShockResistancePerc() 	: float { return initialShockPercRes; }
+	
+	
+	
 	timer function AddLevelBonuses (dt : float, id : int)
 	{
 		var ciriEntity  		: W3ReplacerCiri;
@@ -1132,6 +1181,11 @@ statemachine import class CNewNPC extends CActor
 		stats = GetCharacterStats();
 		
 		
+		if ( stats.HasAbility( 'NPCDoNotGainBoost' ) ) return;
+		if ( stats.HasAbility( 'animal_rat_base' ) ) return;
+		if ( stats.HasAbility( 'mon_djinn' ) ) return;	
+		
+		
 		levelBonusesComputedAtPlayerLevel = playerLevel;
 		
 		ciriEntity = (W3ReplacerCiri)thePlayer;
@@ -1152,10 +1206,7 @@ statemachine import class CNewNPC extends CActor
 				return ;
 			}
 		}
-		
-		if ( stats.HasAbility( 'NPCDoNotGainBoost' ) ) return;
-		
-		
+
 		
 		
 		if ( !ciriEntity && thePlayer.GetEnemyUpscaling() && npcLevel + levelFakeAddon < playerLevel
@@ -1189,6 +1240,8 @@ statemachine import class CNewNPC extends CActor
 		stats.RemoveAbilityAll(theGame.params.MONSTER_BONUS_PER_LEVEL_ARMORED );
 		stats.RemoveAbilityAll(theGame.params.MONSTER_BONUS_PER_LEVEL);
 		
+		CheckInitialPercResistances(); 
+		
 		if ( IsHuman() && GetStat( BCS_Essence, true ) < 0 )
 		{
 			if ( npcGroupType != ENGT_Guard )
@@ -1202,11 +1255,10 @@ statemachine import class CNewNPC extends CActor
 		    {
 				if ( !stats.HasAbility(theGame.params.ENEMY_BONUS_PER_LEVEL) ) 
 				{
-					stats.AddAbilityMultiple(theGame.params.ENEMY_BONUS_PER_LEVEL, 1 + GetWitcherPlayer().GetLevel() + RandRange( 13, 11 ) );
-					if ( FactsQuerySum("NewGamePlus") > 0 )
-					{
-						stats.AddAbilityMultiple(theGame.params.ENEMY_BONUS_PER_LEVEL, RandRange( 13, 11 ) );
-					}
+					
+					
+					stats.AddAbilityMultiple(theGame.params.ENEMY_BONUS_PER_LEVEL, 1 + GetWitcherPlayer().GetLevel() + RandRange( 1, 4 ) );
+					 
 				}
 		    }
 		    
@@ -1220,8 +1272,10 @@ statemachine import class CNewNPC extends CActor
 				lvlDiff = (int)CalculateAttributeValue( GetAttributeValue( 'level',,true ) ) - playerLevel;
 				if ( lvlDiff >= theGame.params.LEVEL_DIFF_DEADLY ) { if ( !stats.HasAbility(theGame.params.ENEMY_BONUS_DEADLY) )
 				{
-					stats.AddAbility(theGame.params.ENEMY_BONUS_DEADLY, true); AddBuffImmunity(EET_Blindness, 'DeadlyEnemy', true);
-					AddBuffImmunity(EET_WraithBlindness, 'DeadlyEnemy', true); }
+					stats.AddAbility(theGame.params.ENEMY_BONUS_DEADLY, true); }
+					
+					
+					
 				}	
 				else if ( lvlDiff >= theGame.params.LEVEL_DIFF_HIGH )
 				{
@@ -1249,7 +1303,10 @@ statemachine import class CNewNPC extends CActor
 				if ( !ciriEntity ) 
 				{
 					lvlDiff = (int)CalculateAttributeValue( GetAttributeValue( 'level',,true ) ) - playerLevel;
-					if 		( lvlDiff >= theGame.params.LEVEL_DIFF_DEADLY ) { if ( !stats.HasAbility(theGame.params.ENEMY_BONUS_DEADLY) ) { stats.AddAbility(theGame.params.ENEMY_BONUS_DEADLY, true); AddBuffImmunity(EET_Blindness, 'DeadlyEnemy', true); AddBuffImmunity(EET_WraithBlindness, 'DeadlyEnemy', true); } }	
+					
+					
+					if ( lvlDiff >= theGame.params.LEVEL_DIFF_DEADLY ) { if ( !stats.HasAbility(theGame.params.ENEMY_BONUS_DEADLY) ) { stats.AddAbility(theGame.params.ENEMY_BONUS_DEADLY, true); } }	
+					
 					else if ( lvlDiff >= theGame.params.LEVEL_DIFF_HIGH )  { if ( !stats.HasAbility(theGame.params.ENEMY_BONUS_HIGH) ) stats.AddAbility(theGame.params.ENEMY_BONUS_HIGH, true);}
 					else if ( lvlDiff > -theGame.params.LEVEL_DIFF_HIGH )  { }
 					else 					  { if ( !stats.HasAbility(theGame.params.ENEMY_BONUS_LOW) ) stats.AddAbility(theGame.params.ENEMY_BONUS_LOW, true); }
@@ -1295,7 +1352,10 @@ statemachine import class CNewNPC extends CActor
 				if ( !ciriEntity ) 
 				{
 					lvlDiff = (int)CalculateAttributeValue(GetAttributeValue('level',,true)) - playerLevel;
-					if 		( lvlDiff >= theGame.params.LEVEL_DIFF_DEADLY ) { if ( !stats.HasAbility(theGame.params.MONSTER_BONUS_DEADLY) ) { stats.AddAbility(theGame.params.MONSTER_BONUS_DEADLY, true); AddBuffImmunity(EET_Blindness, 'DeadlyEnemy', true); AddBuffImmunity(EET_WraithBlindness, 'DeadlyEnemy', true); } }	
+					
+					
+					if ( lvlDiff >= theGame.params.LEVEL_DIFF_DEADLY ) { if ( !stats.HasAbility(theGame.params.MONSTER_BONUS_DEADLY) ) { stats.AddAbility(theGame.params.MONSTER_BONUS_DEADLY, true); } }	
+					
 					else if ( lvlDiff >= theGame.params.LEVEL_DIFF_HIGH )  { if ( !stats.HasAbility(theGame.params.MONSTER_BONUS_HIGH) ) stats.AddAbility(theGame.params.MONSTER_BONUS_HIGH, true); }
 					else if ( lvlDiff > -theGame.params.LEVEL_DIFF_HIGH )  { }
 					else 					  { if ( !stats.HasAbility(theGame.params.MONSTER_BONUS_LOW) ) stats.AddAbility(theGame.params.MONSTER_BONUS_LOW, true); }		
@@ -1894,6 +1954,9 @@ statemachine import class CNewNPC extends CActor
 			
 			
 			
+			if(SkillNameToEnum(attackAction.GetAttackTypeName()) == S_Sword_s02)
+				theGame.VibrateControllerLight();
+			
 			
 			if(attackAction && attackAction.UsedZeroStaminaPerk())
 			{
@@ -2027,7 +2090,7 @@ statemachine import class CNewNPC extends CActor
 				
 				giveExp = false;
 			}
-			else if(attacker == thePlayer)
+			else if(attacker == thePlayer || (GetAttitudeBetween( thePlayer, attacker ) == AIA_Friendly && VecDistance(thePlayer.GetWorldPosition(), GetWorldPosition()) <= 30) )	
 			{
 				
 				giveExp = true;
@@ -2370,7 +2433,7 @@ statemachine import class CNewNPC extends CActor
 	event OnDeath( damageAction : W3DamageAction  )
 	{		
 		var inWater, fists, tmpBool, addAbility, isFinisher : bool;		
-		var expPoints, npcLevel, lvlDiff, i, j 				: int;
+		var expPoints, npcLevel, lvlDiff, i, j, swank		: int;
 		var abilityName, tmpName 							: name;
 		var abilityCount, maxStack, minDist					: float;
 		var itemExpBonus, radius							: float;
@@ -2400,6 +2463,15 @@ statemachine import class CNewNPC extends CActor
 		var burningCauser 									: W3Effect_Burning;
 		var vfxEnt 											: W3VisualFx;
 		var aerondight										: W3Effect_Aerondight;
+		
+		
+		var damageAttr 										: SAbilityAttributeValue;
+		var inv												: CInventoryComponent;
+		var weaponId 										: SItemUniqueId;
+		var damageNames										: array < CName >;
+		var damageValue 									: float;
+		var attribute										: name;
+		
 
 		ciriEntity = (W3ReplacerCiri)thePlayer;
 		witcher = GetWitcherPlayer();
@@ -2472,7 +2544,7 @@ statemachine import class CNewNPC extends CActor
 		
 		super.OnDeath( damageAction );
 		
-		if (!IsHuman() && damageAction.attacker == thePlayer && !ciriEntity && !HasTag('NoBestiaryEntry') ) AddBestiaryKnowledge();
+		if (!IsHuman() && (damageAction.attacker == thePlayer || GetAttitudeBetween( thePlayer, damageAction.attacker ) == AIA_Friendly) && !ciriEntity && !HasTag('NoBestiaryEntry') ) AddBestiaryKnowledge();	
 		
 		if ( !WillBeUnconscious() && !HasTag( 'NoHitFx' ) )
 		{
@@ -2734,10 +2806,15 @@ statemachine import class CNewNPC extends CActor
 				
 				if(!HasTag('AchievementSwankDontCount'))
 				{
-					if(FactsQuerySum("statistic_killed_in_10_sec") >= 4)
+					swank = FactsQuerySum("statistic_killed_in_10_sec");
+					if(swank >= 4)
 						theGame.GetGamerProfile().AddAchievement(EA_Swank);
 					else
+					{
 						FactsAdd("statistic_killed_in_10_sec", 1, 10);
+						if(swank > 0)
+							theGame.GetGamerProfile().NoticeAchievementProgress(EA_Swank, swank);
+					}
 				}
 				
 				
@@ -2797,6 +2874,27 @@ statemachine import class CNewNPC extends CActor
 				}
 				
 				
+				inv 		= GetInventory();		
+				weaponId 	= inv.GetItemFromSlot( 'r_weapon' );
+				inv.GetWeaponDTNames( weaponId, damageNames );
+				attribute = GetBasicAttackDamageAttributeName( theGame.params.ATTACK_NAME_HEAVY, theGame.params.DAMAGE_NAME_FIRE);
+				damageAttr = GetAttributeValue( attribute );
+				damageAttr.valueBase = GetTotalWeaponDamage( weaponId, damageNames[0], GetInvalidUniqueId() );
+
+				if( damageAttr.valueBase <= 0 )
+				{
+					damageAttr.valueBase = 10;
+				}
+				
+				if(damageAttr.valueMultiplicative <= 0)
+				{
+					damageAttr.valueMultiplicative = 1;
+				}
+				
+				damageValue = ( damageAttr.valueBase * damageAttr.valueMultiplicative + damageAttr.valueAdditive ) * 5;
+				
+				
+				
 				FindGameplayEntitiesInSphere(entities, GetWorldPosition(), radius, 1000, , FLAG_OnlyAliveActors);
 				
 				
@@ -2811,6 +2909,10 @@ statemachine import class CNewNPC extends CActor
 						{
 							act.AddDamage(damages[j].dmgType, damages[j].dmgVal);
 						}
+						
+						
+						act.AddDamage(damageNames[0], damageValue);
+						
 						
 						act.AddEffectInfo(EET_Burning, , , , , 0.5f);
 						
@@ -3325,6 +3427,9 @@ statemachine import class CNewNPC extends CActor
 	
 	import final function NoticeActorInGuardArea( actor : CActor );
 	
+	
+	
+	import final function IsMountedByPlayer( isMountedByPlayer : bool ) : void;
 	
 	
 	
@@ -4214,16 +4319,36 @@ statemachine import class CNewNPC extends CActor
 		}
 	}
 	
+	
+	private var spear : CEntity;
+	timer function SpearImpulse(dt : float, id : int)
+	{
+		spear.GetComponent("CMeshComponent0").ApplyLocalImpulseToPhysicalObject(Vector(50,0,50));	
+	}
+	
+	
 	public function ProcessSpearDestruction() : bool 
 	{
 		var appearanceName : name;
 		var shouldDrop : bool;
-		var spear : CEntity;
+		
+		
+		var ids : array<SItemUniqueId>;
 		
 		appearanceName = 'broken';
 		spear = GetInventory().GetItemEntityUnsafe( GetInventory().GetItemFromSlot( 'r_weapon' ) );
 		spear.ApplyAppearance( appearanceName );
 		DropItemFromSlot('r_weapon', true);
+		
+		
+		spear.PlayEffect('wood_break');
+		ids = GetInventory().GetItemsByName('Q1_brokenSpear');
+		if(ids.Size() <= 0)
+			ids = GetInventory().AddAnItem( 'Q1_brokenSpear', 1, true, true, false );
+		GetInventory().MountItem(ids[0], true);
+		AddTimer('SpearImpulse', 0.05, false);
+		
+		
 		return true;
 		
 	}	

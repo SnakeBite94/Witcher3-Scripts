@@ -307,7 +307,7 @@ class CR4GlossaryBestiaryMenu extends CR4ListBaseMenu
 		
 		itemsNames = l_creature.GetItemsUsedAgainstCreature();
 		itemsFlashArray = CreateItems(itemsNames);
-		
+
 		if( itemsFlashArray && itemsFlashArray.GetLength() > 0 )
 		{
 			m_flashValueStorage.SetFlashBool("journal.rewards.panel.visible",true);

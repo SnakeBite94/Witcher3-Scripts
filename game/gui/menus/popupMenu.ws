@@ -75,6 +75,13 @@ class CR4MenuPopup extends CR4OverlayMenu
 		quantityData = (SliderPopupData) m_DataObject;
 		if (quantityData)
 		{
+			if( QuantityValue > quantityData.currentValue )
+				theSound.SoundEvent("gui_global_slider_up");
+			else if( QuantityValue < quantityData.currentValue )
+				theSound.SoundEvent("gui_global_slider_down");
+			else
+				theSound.SoundEvent("gui_global_slider_none");
+
 			quantityData.currentValue = QuantityValue;
 		}
 	}

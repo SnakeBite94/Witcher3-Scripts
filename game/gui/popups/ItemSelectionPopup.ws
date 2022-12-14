@@ -56,6 +56,7 @@ class CR4ItemSelectionPopup extends CR4PopupBase
 		m_playerInv.Initialize( thePlayer.GetInventory() );
 		m_playerInv.filterTagList = m_DataObject.filterTagsList;
 		m_playerInv.filterForbiddenTagList = m_DataObject.filterForbiddenTagsList;
+		m_playerInv.ignorePosition = true; 
 		
 		switch( m_DataObject.selectionMode )
 		{

@@ -70,6 +70,12 @@ class CBTTaskStopYrden extends IBehTreeTask
 		npc.RemoveAllBuffsOfType( EET_SlowdownFrost );
 		npc.RemoveAllBuffsOfType( EET_Slowdown );
 		
+		
+		npc.RemoveAllBuffsOfType( EET_Bleeding1 );
+		npc.RemoveAllBuffsOfType( EET_Bleeding2 );
+		npc.RemoveAllBuffsOfType( EET_Bleeding3 );
+		
+		
 		l_entities.Clear();
 		
 		if( useYrdenRadiusAsRange )

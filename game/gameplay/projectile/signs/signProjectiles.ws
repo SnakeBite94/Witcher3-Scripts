@@ -53,8 +53,12 @@ class W3AardProjectile extends W3SignProjectile
 			else if ( owner.CanUseSkill(S_Magic_s06) )		
 			{			
 				
-				dmgVal = GetWitcherPlayer().GetSkillLevel(S_Magic_s06) * CalculateAttributeValue( owner.GetSkillAttributeValue( S_Magic_s06, theGame.params.DAMAGE_NAME_FORCE, false, true ) );
-				action.AddDamage( theGame.params.DAMAGE_NAME_FORCE, dmgVal );
+				
+				sp = action.GetPowerStatValue();
+				dmgVal += GetWitcherPlayer().GetSkillLevel(S_Magic_s06) * victimNPC.GetHealth() * ( 0.01 + 0.03 * LogF( sp.valueMultiplicative ) );
+				
+				action.AddDamage( theGame.params.DAMAGE_NAME_DIRECT, dmgVal );
+				
 			}
 		}
 		else
@@ -92,6 +96,7 @@ class W3AardProjectile extends W3SignProjectile
 		var result : EEffectInteract;
 		var mutationAction : W3DamageAction;
 		var min, max : SAbilityAttributeValue;
+		var sp : SAbilityAttributeValue; 
 		var dmgVal : float;
 		var instaKill, hasKnockdown, applySlowdown : bool;
 				
@@ -99,8 +104,11 @@ class W3AardProjectile extends W3SignProjectile
 		hasKnockdown = victimNPC.HasBuff( EET_Knockdown ) || victimNPC.HasBuff( EET_HeavyKnockdown ) || victimNPC.GetIsRecoveringFromKnockdown();
 		
 		
-		theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Mutation6', 'full_freeze_chance', min, max );
-		if( RandF() >= min.valueMultiplicative )
+		
+		
+		
+		if( RandF() >= thePlayer.GetStat(BCS_Focus) * 0.1 && !isSupercharged )
+		
 		{
 			
 			applySlowdown = true;			
@@ -119,7 +127,7 @@ class W3AardProjectile extends W3SignProjectile
 			}
 			
 			
-			if( EffectInteractionSuccessfull( result ) && hasKnockdown )				
+			if( EffectInteractionSuccessfull( result ) && hasKnockdown && !victimNPC.HasTag('eredin') && !victimNPC.HasTag('imlerith') && !victimNPC.HasTag('Caranthir') )	
 			{
 				
 				mutationAction = new W3DamageAction in theGame.damageMgr;
@@ -139,24 +147,35 @@ class W3AardProjectile extends W3SignProjectile
 		}
 		
 		
-		if( !instaKill && !victimNPC.HasBuff( EET_Frozen ) )
+		
+		
+		if( !instaKill )
 		{			
 			if ( owner.CanUseSkill(S_Magic_s06) )
 			{
-				dmgVal = GetWitcherPlayer().GetSkillLevel(S_Magic_s06) * CalculateAttributeValue( owner.GetSkillAttributeValue( S_Magic_s06, theGame.params.DAMAGE_NAME_FORCE, false, true ) );
-				action.AddDamage( theGame.params.DAMAGE_NAME_FORCE, dmgVal );
+				
+				sp = action.GetPowerStatValue();
+				dmgVal += GetWitcherPlayer().GetSkillLevel(S_Magic_s06) * victimNPC.GetHealth() * ( 0.01 + 0.03 * LogF( sp.valueMultiplicative ) );
+				
+				action.AddDamage( theGame.params.DAMAGE_NAME_DIRECT, dmgVal );
+				
+				
+				if(victimNPC.HasTag('eredin') || victimNPC.HasTag('imlerith') || victimNPC.HasTag('Caranthir'))
+					theGame.damageMgr.ProcessAction( action );
 			}
 			
-			theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Mutation6', 'ForceDamage', min, max );
-			dmgVal = CalculateAttributeValue( min );
-			action.AddDamage( theGame.params.DAMAGE_NAME_FORCE, dmgVal );
-			
-			action.ClearEffects();
-			action.SetProcessBuffsIfNoDamage( false );
-			action.SetForceExplosionDismemberment();
-			action.SetIgnoreInstantKillCooldown();
-			action.SetBuffSourceName( "Mutation 6" );
-			theGame.damageMgr.ProcessAction( action );
+			if( !victimNPC.HasBuff( EET_Frozen ) && !victimNPC.HasTag('eredin') && !victimNPC.HasTag('imlerith') && !victimNPC.HasTag('Caranthir'))	
+			{ 
+				theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Mutation6', 'ForceDamage', min, max );
+				dmgVal = CalculateAttributeValue( min );
+				action.AddDamage( theGame.params.DAMAGE_NAME_FORCE, dmgVal );
+				action.ClearEffects();
+				action.SetProcessBuffsIfNoDamage( false );
+				action.SetForceExplosionDismemberment();
+				action.SetIgnoreInstantKillCooldown();
+				action.SetBuffSourceName( "Mutation 6" );
+				theGame.damageMgr.ProcessAction( action );
+			}
 		}
 	}
 	
@@ -389,8 +408,17 @@ class W3IgniProjectile extends W3SignProjectile
 		}
 		else		
 		{
-			action.SetHitEffect('igni_cone_hit', false, false);
-			action.SetHitEffect('igni_cone_hit', true, false);
+			
+			if(ownerActor.HasTag('mq1060_witcher'))
+			{
+				action.SetHitEffect('igni_cone_hit_red', false, false);
+				action.SetHitEffect('igni_cone_hit_red', true, false);
+			}
+			else
+			{
+				action.SetHitEffect('igni_cone_hit', false, false);
+				action.SetHitEffect('igni_cone_hit', true, false);
+			}			
 			action.SetHitReactionType(EHRT_Igni, false);
 		}
 		

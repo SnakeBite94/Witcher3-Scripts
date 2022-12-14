@@ -206,7 +206,7 @@ class CR4HudModuleEnemyFocus extends CR4HudModuleBase
 		var l_targetScreenPos			: Vector;
 		var l_dodgeFeedbackTarget		: CActor;
 		var l_isBoss					: bool;
-		var screenMargin : float = 0.025;
+		var screenMargin : float = 0.085; 
 		var marginLeftTop : Vector;
 		var marginRightBottom : Vector;
 		var hud : CR4ScriptedHud;

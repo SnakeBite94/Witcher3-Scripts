@@ -609,6 +609,8 @@ class CBTTaskSpawnMultipleEntities3StateAttack extends CBTTaskSpawnMultipleEntit
 			l_damageAreaEntity = (CDamageAreaEntity)l_entity;
 			if ( l_damageAreaEntity )
 			{
+				GCameraShake( 10, true, thePlayer.GetWorldPosition(), 30.0f ); 
+				
 				l_damageAreaEntity.owner = GetActor();
 			}
 			m_entitiesSpawned += 1;

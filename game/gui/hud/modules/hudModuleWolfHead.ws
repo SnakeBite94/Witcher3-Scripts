@@ -246,7 +246,7 @@ class CR4HudModuleWolfHead extends CR4HudModuleBase
 			m_LastMaxToxicity = curMaxToxicity;
 			
 			damageThreshold = GetWitcherPlayer().GetToxicityDamageThreshold();
-			curDeadlyToxicity = ( curToxicity >= damageThreshold * curMaxToxicity );
+			curDeadlyToxicity = ( (curToxicity + curLockedToxicity) >= damageThreshold * curMaxToxicity ); 
 			if( m_bLastDeadlyToxicity != curDeadlyToxicity ) 
 			{
 				m_fxSetDeadlyToxicity.InvokeSelfOneArg( FlashArgBool( curDeadlyToxicity ) );
@@ -403,6 +403,11 @@ class CR4HudModuleWolfHead extends CR4HudModuleBase
 	public function SetAlwaysDisplayed( value : bool )
 	{
 		m_fxSetAlwaysDisplayed.InvokeSelfOneArg(FlashArgBool(value));
+	}
+	
+	public function GetWolfActivator() : CScriptedFlashFunction
+	{
+		return m_fxSwitchWolfActivation;
 	}
 }
 

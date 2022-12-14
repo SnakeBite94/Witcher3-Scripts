@@ -65,7 +65,7 @@ statemachine import abstract class CPlayer extends CActor
 		
 		default bStartScreenIsOpened = false;	
 		default bEndScreenIsOpened = false;	
-		default DEATH_SCREEN_OPEN_DELAY = 4.f; 
+		default DEATH_SCREEN_OPEN_DELAY = 2.6f; 
 		default fStartScreenFadeDuration = 3.0; 
 		default fStartScreenFadeInDuration = 3.0; 
 		default bStartScreenEndWithBlackScreen = false; 
@@ -80,7 +80,7 @@ statemachine import abstract class CPlayer extends CActor
 	
 		default bUITakesInput = false;
 		default bLAxisReleased = true;
-		default inputModuleNeededToRun = -1.0;
+		default inputModuleNeededToRun = -10.0; 
 		
 	
 	private				var bInteractionPressed			: bool;	
@@ -186,6 +186,9 @@ statemachine import abstract class CPlayer extends CActor
 	default teleportedOnBoatToOtherHUB = false;
 	
 	
+	protected var photomodeManager : PhotomodeManager;
+
+	
 	
 	public var isAdaptiveBalance : bool;
 	default isAdaptiveBalance = false;
@@ -230,6 +233,9 @@ statemachine import abstract class CPlayer extends CActor
 		AddTimer( 'PlayerTick', 0.f, true );
 		InitializeParryType();
 		SetCanPlayHitAnim( true );
+
+		
+		theGame.RemoveTimeScale( theGame.GetTimescaleSource(ETS_DebugInput) );
 		
 		
 		if( inv )
@@ -278,6 +284,18 @@ statemachine import abstract class CPlayer extends CActor
 		
 		
 		ResumeStaminaRegen( 'Sprint' );
+		
+		photomodeManager = new PhotomodeManager in this;
+		photomodeManager.Initialize();
+		
+		
+		
+		invertedLockOption = ((CInGameConfigWrapper)theGame.GetInGameConfigWrapper()).GetVarValue( 'Controls', 'InvertLockOption' );
+		invertedControllerCameraX = ((CInGameConfigWrapper)theGame.GetInGameConfigWrapper()).GetVarValue( 'Controls', 'InvertCameraX' );
+		invertedControllerCameraY = ((CInGameConfigWrapper)theGame.GetInGameConfigWrapper()).GetVarValue( 'Controls', 'InvertCameraY' );
+		invertedMouseCameraX = ((CInGameConfigWrapper)theGame.GetInGameConfigWrapper()).GetVarValue( 'Controls', 'InvertCameraXOnMouse' );
+		invertedMouseCameraY = ((CInGameConfigWrapper)theGame.GetInGameConfigWrapper()).GetVarValue( 'Controls', 'InvertCameraYOnMouse' );
+		
 	}
 	
 	
@@ -739,6 +757,18 @@ statemachine import abstract class CPlayer extends CActor
 	{
 		lastAxisInputIsMovement = true;
 	}
+	
+	
+	private var invertedLockOption : bool;
+	private var invertedControllerCameraX, invertedControllerCameraY : bool;
+	private var invertedMouseCameraX, invertedMouseCameraY : bool;
+	
+	public function SetInvertedLockOption(set : bool) {invertedLockOption = set;}
+	public function SetInvertedCameraX(set : bool) {invertedControllerCameraX = set;}
+	public function SetInvertedCameraY(set : bool) {invertedControllerCameraY = set;}
+	public function SetInvertedMouseCameraX(set : bool) {invertedMouseCameraX = set;}
+	public function SetInvertedMouseCameraY(set : bool) {invertedMouseCameraY = set;}
+	
 
 	private var bRAxisReleasedLastFrame 	: bool;
 	private var selectTargetTime 			: float;
@@ -755,8 +785,24 @@ statemachine import abstract class CPlayer extends CActor
 		
 		if ( this.IsCameraLockedToTarget() )
 		{
-			currTime = theGame.GetEngineTimeAsSeconds();
-		
+			currTime = theGame.GetEngineTimeAsSeconds();	
+
+			
+			if(invertedLockOption)
+			{
+				if(thePlayer.IsPCModeEnabled())
+				{
+					if(invertedMouseCameraX) rightStickVector.X *= -1;
+					if(invertedMouseCameraY) rightStickVector.Y *= -1;
+				}
+				else
+				{
+					if(invertedControllerCameraX) rightStickVector.X *= -1;
+					if(invertedControllerCameraY) rightStickVector.Y *= -1;
+				}
+			}
+			
+			
 			if ( thePlayer.IsPCModeEnabled() )
 			{
 				if ( rawLengthR > 0.f )
@@ -957,13 +1003,11 @@ statemachine import abstract class CPlayer extends CActor
 		RemoveReactions();
 		theGame.GetBehTreeReactionManager().CreateReactionEventIfPossible( thePlayer, 'PlayerInScene', -1.f, 60.0f, -1, -1, true ); 
 		PushState( 'PlayerDialogScene' );		
-
 	}
 
 	event OnBlockingSceneStarted_OnIntroCutscene( scene: CStoryScene )
 	{
-		SetImmortalityMode( AIM_Invulnerable, AIC_Scene );
-		SetTemporaryAttitudeGroup( 'geralt_friendly', AGP_Scenes);
+		super.OnBlockingSceneStarted_OnIntroCutscene( scene );
 	}
 	
 	event OnBlockingSceneEnded( optional output : CStorySceneOutput)
@@ -1044,7 +1088,10 @@ statemachine import abstract class CPlayer extends CActor
 		
 		if ( allowDeath )
 		{
-			SetAlive(false);
+			if(IsAlive())
+			{
+				SetAlive(false);
+			}
 			
 			if ( IsUsingHorse( true ) || IsUsingBoat() )
 			{
@@ -1053,7 +1100,18 @@ statemachine import abstract class CPlayer extends CActor
 			{
 				RaiseForceEvent( 'Death' );
 				
-				SetBehaviorVariable( 'Ragdoll_Weight', 1.f );
+				
+				theSound.EnterGameState(ESGS_Death);
+				theSound.SoundEvent( 'gui_global_player_death_thump' );
+				
+				theGame.SetTimeScale(0.6f, theGame.GetTimescaleSource(ETS_DebugInput), theGame.GetTimescalePriority(ETS_DebugInput), false, true );
+				
+				
+				
+				
+				
+				
+				
 			}
 			
 			theGame.FadeOutAsync(DEATH_SCREEN_OPEN_DELAY - 0.1 );
@@ -1088,6 +1146,12 @@ statemachine import abstract class CPlayer extends CActor
 			}
 			theTelemetry.LogWithLabel(TE_FIGHT_PLAYER_DIES, damageAction.attacker.ToString());
 		}
+	}
+	
+	
+	timer function JumpOnRagdollFix( deltaTime : float , id : int)
+	{
+		TurnOnRagdoll();
 	}
 	
 	
@@ -1166,7 +1230,7 @@ statemachine import abstract class CPlayer extends CActor
 			BreakPheromoneEffect();
 			RemoveTimer( 'DisableSprintingTimer' );
 			AddTimer('SprintingTimer', 0.01, true);
-			PauseStaminaRegen( 'Sprint' );
+			
 		}
 		else 
 		{
@@ -1280,7 +1344,8 @@ statemachine import abstract class CPlayer extends CActor
 		{
 			currentStateName = GetCurrentStateName();
 			
-			if( currentStateName == 'Exploration' || currentStateName == 'CombatSteel' || currentStateName == 'CombatSilver' || currentStateName == 'CombatFists' )
+			
+			if(  currentStateName == 'CombatSteel' || currentStateName == 'CombatSilver' || currentStateName == 'CombatFists' )
 			{
 				return true;
 			}
@@ -1322,7 +1387,16 @@ statemachine import abstract class CPlayer extends CActor
 	
 	public function IsSprintActionPressed() : bool
 	{
-		return theInput.IsActionPressed('Sprint') || sprintToggle;
+		
+		if(thePlayer.GetLeftStickSprint() && theInput.LastUsedGamepad())
+		{
+			return GetIsSprintToggled();
+		}
+		else
+		{
+			return theInput.IsActionPressed('Sprint') || sprintToggle;
+		}
+		
 	}
 	
 	public function SetSprintToggle( flag : bool )
@@ -1991,6 +2065,27 @@ statemachine import abstract class CPlayer extends CActor
 	public function CanPlaySpecificVoiceset() : bool 					{ return canPlaySpecificVoiceset; }
 	public function SetCanPlaySpecificVoiceset( val : bool ) 			{ canPlaySpecificVoiceset = val; }
 	timer function ResetSpecificVoicesetFlag( dt : float, id : int )	{ SetCanPlaySpecificVoiceset( true ); }
+	
+	
+	private var numberOfEnemiesAttacking : int;
+	final function SetPlayerUnderAttack( toggle : bool )
+	{
+		if( toggle )
+		{
+			numberOfEnemiesAttacking += 1;
+		}
+		else
+		{
+			numberOfEnemiesAttacking -= 1;
+		}
+	}
+	
+	final function IsPlayerUnderAttack() : bool
+	{
+		return numberOfEnemiesAttacking;
+	}
+	
+	
 	
 	function GetThreatLevel() : int
 	{

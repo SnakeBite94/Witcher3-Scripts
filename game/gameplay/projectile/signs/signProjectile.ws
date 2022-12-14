@@ -22,13 +22,15 @@ abstract class W3SignProjectile extends CProjectileTrajectory
 	protected var action 		: W3DamageAction;
 	protected var signSkill 	: ESkill;
 	protected var wantedTarget	: CGameplayEntity;
-	protected var signEntity 	: W3SignEntity;
+	public var signEntity 	: W3SignEntity;
 	default signSkill = S_SUndefined;
 
 	protected var hitEntities 	: array< CGameplayEntity >;
 	protected var attackRange 	: CAIAttackRange;
 		
 	protected var isReusable	: bool; 
+	
+	protected var isSupercharged : bool; 
 
 	public function ExtInit( signOwner : W3SignOwner, sign : ESkill, signEnt : W3SignEntity, optional reusable : bool )
 	{

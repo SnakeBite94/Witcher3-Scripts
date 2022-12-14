@@ -96,6 +96,8 @@ abstract class W3AdvancedProjectile extends CThrowable
 	
 	event OnProjectileCollision( pos, normal : Vector, collidingComponent : CComponent, hitCollisionsGroups : array< name >, actorIndex : int, shapeIndex : int )
 	{
+		var dmgMult : float; 
+	
 		super.OnProjectileCollision(pos, normal, collidingComponent, hitCollisionsGroups, actorIndex, shapeIndex);
 		
 		if ( !dealDamageEvenIfDodging && victim == thePlayer && ( GetAttitudeBetween( victim, caster ) == AIA_Friendly || ( thePlayer.IsCurrentlyDodging() && ( thePlayer.IsCiri() || thePlayer.GetBehaviorVariable( 'isRolling' ) == 1.f ) ) ) )
@@ -103,6 +105,17 @@ abstract class W3AdvancedProjectile extends CThrowable
 			victim = NULL;
 			ignore = true;
 		}
+		
+		
+		if ( thePlayer.IsCiri() && (CActor)victim )
+		{
+			projDMG = projDMG + (( projDMG * 0.025f ) * ((CActor)victim).GetLevel());
+		}
+		else
+		{
+			projDMG = projDMG + (( projDMG * 0.025f ) * thePlayer.GetLevel());
+		}
+		
 	}	
 }
 
@@ -171,8 +184,19 @@ class W3BoulderProjectile extends W3AdvancedProjectile
 		{
 			action.AddEffectInfo(projEfect);
 		}
-		action.AddDamage(theGame.params.DAMAGE_NAME_BLUDGEONING, projDMG );
-		action.SetIgnoreArmor( ignoreArmor );
+		
+		
+		action.AddDamage( theGame.params.DAMAGE_NAME_RENDING, projDMG ); 
+		
+		if ( ((CActor)victim).UsesEssence() )
+		{
+			
+		}
+		
+		else
+		{
+			action.SetIgnoreArmor( ignoreArmor );
+		}
 		action.SetCanPlayHitParticle(false);
 		theGame.damageMgr.ProcessAction( action );
 		delete action;
@@ -218,6 +242,80 @@ class W3BoulderProjectile extends W3AdvancedProjectile
 		}
 		DeactivateProjectile();
 	}
+	
+	
+	event OnAardHit( sign : W3AardProjectile )
+	{
+		var rigidMesh		 	: CMeshComponent;
+		var randAngleOffset 	: float;
+		var level 				: int;
+		
+		super.OnAardHit(sign);
+		
+		StopProjectile();
+		
+		rigidMesh = (CMeshComponent)this.GetComponentByClassName('CRigidMeshComponent');
+		
+		if ( rigidMesh )
+		{
+			rigidMesh.SetEnabled( true );
+		}
+		else
+		{
+			randAngleOffset = RandRangeF( 10, -10 );
+			
+			
+			
+			if(sign.signEntity.IsAlternateCast())
+			{
+				if(thePlayer.CanUseSkill(S_Magic_s01))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s01);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else if(thePlayer.CanUseSkill(S_Magic_s12))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s12);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else
+				{
+					this.bounceOfVelocityPreserve = 0.1;
+				}
+			}
+			else
+			{
+				if(thePlayer.CanUseSkill(S_Magic_s12))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s12);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else
+				{
+					this.bounceOfVelocityPreserve = 0.1;
+				}
+			}
+			
+			this.BounceOff( VecFromHeading( thePlayer.GetHeading() + randAngleOffset ),this.GetWorldPosition() );
+			this.Init( thePlayer );
+		}
+	}
+	
 }
 
 class W3TraceGroundProjectile extends W3AdvancedProjectile
@@ -536,6 +634,80 @@ class W3StoneProjectile extends W3AdvancedProjectile
 		comp.SetRotation( rot );
 		
 	}
+	
+	
+	event OnAardHit( sign : W3AardProjectile )
+	{
+		var rigidMesh		 	: CMeshComponent;
+		var randAngleOffset 	: float;
+		var level 				: int;
+		
+		super.OnAardHit(sign);
+		
+		StopProjectile();
+		
+		rigidMesh = (CMeshComponent)this.GetComponentByClassName('CRigidMeshComponent');
+		
+		if ( rigidMesh )
+		{
+			rigidMesh.SetEnabled( true );
+		}
+		else
+		{
+			randAngleOffset = RandRangeF( 10, -10 );
+			
+			
+			
+			if(sign.signEntity.IsAlternateCast())
+			{
+				if(thePlayer.CanUseSkill(S_Magic_s01))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s01);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else if(thePlayer.CanUseSkill(S_Magic_s12))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s12);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else
+				{
+					this.bounceOfVelocityPreserve = 0.1;
+				}
+			}
+			else
+			{
+				if(thePlayer.CanUseSkill(S_Magic_s12))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s12);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else
+				{
+					this.bounceOfVelocityPreserve = 0.1;
+				}
+			}
+			
+			this.BounceOff( VecFromHeading( thePlayer.GetHeading() + randAngleOffset ),this.GetWorldPosition() );
+			this.Init( thePlayer );
+		}
+	}
+	
 }
 
 class W3EnvironmentProjectile extends W3AdvancedProjectile
@@ -642,6 +814,7 @@ class W3EnvironmentProjectile extends W3AdvancedProjectile
 	{
 		var rigidMesh		 	: CMeshComponent;
 		var randAngleOffset 	: float;
+		var level 				: int;
 		
 		super.OnAardHit(sign);
 		
@@ -656,7 +829,54 @@ class W3EnvironmentProjectile extends W3AdvancedProjectile
 		else
 		{
 			randAngleOffset = RandRangeF( 10, -10 );
-			this.bounceOfVelocityPreserve = 0.7;
+			
+			
+			
+			if(sign.signEntity.IsAlternateCast())
+			{
+				if(thePlayer.CanUseSkill(S_Magic_s01))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s01);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else if(thePlayer.CanUseSkill(S_Magic_s12))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s12);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else
+				{
+					this.bounceOfVelocityPreserve = 0.1;
+				}
+			}
+			else
+			{
+				if(thePlayer.CanUseSkill(S_Magic_s12))
+				{
+					level = thePlayer.GetSkillLevel(S_Magic_s12);
+					if(level == 1)
+						this.bounceOfVelocityPreserve = 0.3;
+					else if(level == 2)
+						this.bounceOfVelocityPreserve = 0.5;
+					else if(level >= 3)
+						this.bounceOfVelocityPreserve = 0.7;
+				}
+				else
+				{
+					this.bounceOfVelocityPreserve = 0.1;
+				}
+			}
+			
 			this.BounceOff( VecFromHeading( thePlayer.GetHeading() + randAngleOffset ),this.GetWorldPosition() );
 			this.Init( thePlayer );
 		}
@@ -1077,9 +1297,23 @@ class DebuffProjectile extends W3AdvancedProjectile
 			if ( this.projDMG > 0 )
 			{
 				
-					if ( ignoreArmor )
-						action.SetIgnoreArmor(true);
-					action.AddDamage(damageTypeName, projDMG );
+				if ( ((CActor)victim).UsesEssence() )
+				{
+					
+				}
+				
+				else
+				{
+					action.SetIgnoreArmor( ignoreArmor );
+				}
+				action.AddDamage(damageTypeName, projDMG );
+				
+				
+				if ( !DamageHitsEssence( damageTypeName ) )
+				{
+					action.AddDamage(theGame.params.DAMAGE_NAME_RENDING, projDMG );
+				}
+				
 			}
 			
 			if ( customDuration > 0 && (CActor)victim )

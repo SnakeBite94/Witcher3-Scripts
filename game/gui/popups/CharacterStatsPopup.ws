@@ -454,8 +454,8 @@ function AddCharacterStatSigns(tag : string, varKey:name, locKey:string, iconTag
 		if ( GetWitcherPlayer().CanUseSkill(S_Magic_s06) )
 		{
 			valueAbility = GetWitcherPlayer().GetSkillLevel(S_Magic_s06) * CalculateAttributeValue( GetWitcherPlayer().GetSkillAttributeValue( S_Magic_s06, theGame.params.DAMAGE_NAME_FORCE, false, true ) );
-			valueAbility += mutDmgMod.valueBase;
-			valueAbility *= sp.valueMultiplicative;
+			valueAbility += mutDmgMod.valueBase;			
+			
 			valueStr = (string)RoundMath( valueAbility );
 		}
 		else
@@ -472,7 +472,10 @@ function AddCharacterStatSigns(tag : string, varKey:name, locKey:string, iconTag
 	else if ( varKey == 'igni_burnchance' ) 	
 	{  
 		sp = GetWitcherPlayer().GetTotalSignSpellPower(S_Magic_2);
-		valueAbility = sp.valueMultiplicative / theGame.params.MAX_SPELLPOWER_ASSUMED - 4 * theGame.params.NPC_RESIST_PER_LEVEL;
+		
+		
+		valueAbility = ( 1 + LogF( sp.valueMultiplicative ) ) / theGame.params.MAX_SPELLPOWER_ASSUMED - 4 * theGame.params.NPC_RESIST_PER_LEVEL; 
+		
 		if (GetWitcherPlayer().CanUseSkill(S_Magic_s09))
 		{
 			sp = GetWitcherPlayer().GetSkillAttributeValue(S_Magic_s09, 'chance_bonus', false, false);

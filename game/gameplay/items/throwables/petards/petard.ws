@@ -89,6 +89,10 @@ class W3Petard extends CThrowable
 		var orientationTarget	: EOrientationTarget;
 		var slideTargetActor : CActor;
 		
+		
+		var dist, x, y, maxThrowRange : float;
+		var playerPos : Vector;
+		
 		if ( animEventName == 'ProjectileThrow' )
 		{
 			if ( GetOwner() == thePlayer )
@@ -129,6 +133,17 @@ class W3Petard extends CThrowable
 						throwPos = GetOwner().GetWorldForward() * 8 + GetOwner().GetWorldPosition();		
 				}
 			}
+			
+			
+			playerPos = thePlayer.GetWorldPosition();
+			dist = VecDistance(throwPos,playerPos);
+			maxThrowRange = theGame.params.MAX_THROW_RANGE;
+			if(dist > maxThrowRange)
+			{
+				throwPos.X = playerPos.X + maxThrowRange/dist * (throwPos.X - playerPos.X);
+				throwPos.Y = playerPos.Y + maxThrowRange/dist * (throwPos.Y - playerPos.Y);
+			}
+			
 			
 			ThrowProjectile( throwPos );
 		}
@@ -292,7 +307,11 @@ class W3Petard extends CThrowable
 			
 			if( thePlayer.inv.GetItemQuantity(itemId) < 1 )		
 				thePlayer.ClearSelectedItemId();
-			else if( !GetWitcherPlayer().IsSetBonusActive( EISB_Wolf_2 ) )
+			
+			
+			
+			else if( !GetWitcherPlayer().IsSetBonusActive( EISB_RedWolf_1 ) )
+			
 			{
 				GetWitcherPlayer().AddBombThrowDelay(itemId);
 			}
@@ -310,7 +329,7 @@ class W3Petard extends CThrowable
 		var actorsInAoE : array<CActor>;
 		var i : int;
 		var collisionGroups : array<name>;
-
+		
 		BreakAttachment();
 		if( target.HasTag('AddRagdollCollision'))
 		{
@@ -363,7 +382,12 @@ class W3Petard extends CThrowable
 			PlayEffectSingle(FX_TRAIL);
 		}
 		wasThrown = true;
+		
+		
+		
 	}
+	
+	
 	
 	
 	
@@ -379,6 +403,7 @@ class W3Petard extends CThrowable
 		var entity : CEntity;
 		var rot : EulerAngles;
 		var rotMatrix, m1, m2, m3 : Matrix;
+		var waterEntity : CEntity; 
 		
 		if(stopCollisions)
 			return true;
@@ -444,10 +469,24 @@ class W3Petard extends CThrowable
 				isInDeepWater = true;
 			
 			
-			if(isInDeepWater)
+			
+			
+			if(isInWater && !waterFXPlayed)
 			{
 				template = (CEntityTemplate)LoadResource("water_splash_small");
-				theGame.CreateEntity(template, GetWorldPosition(), GetWorldRotation());
+				waterEntity = theGame.CreateEntity(template, petardPos, thePlayer.GetWorldRotation());				
+				if(isInDeepWater)
+					waterEntity.PlayEffect('splash_big');
+				else
+					waterEntity.PlayEffect('splash');
+				waterFXPlayed = true;
+				waterEntity.AddTag('bomb_water_splash');
+				waterEntity.DestroyAfter(6.f);
+				waterEntity.SoundEvent("fx_water_object_splash_small");
+			}
+			
+			if(isInDeepWater)
+			{
 				stopCollisions = true;
 				DestroyAfter(3);
 			}
@@ -485,6 +524,8 @@ class W3Petard extends CThrowable
 			
 		}
 	}
+	
+	private var waterFXPlayed : bool;
 	
 	
 	
@@ -681,7 +722,7 @@ class W3Petard extends CThrowable
 		
 		
 		ProcessEffectPlayFXs(true);
-				
+
 		if(loopDuration > 0)
 		{
 			ProcessLoopEffect();
@@ -691,7 +732,7 @@ class W3Petard extends CThrowable
 			OnTimeEndedFunction(0);
 		}
 	}
-	
+
 	protected function SnapComponents(isImpact : bool)
 	{
 		var params : SPetardParams;
@@ -1082,12 +1123,18 @@ class W3Petard extends CThrowable
 		else
 			hitType = EHRT_None;
 		
+		
+		DoTBuff = new W3BuffDoTParams in this;
+		DoTBuff.isFromBomb = true;
+		
 		if( (W3PlayerWitcher)GetOwner() && GetWitcherPlayer().CanUseSkill( S_Perk_20 ) )
 		{
-			DoTBuff = new W3BuffDoTParams in this;
 			DoTBuff.isPerk20Active = true;
 			canUsePerk20 = true;				
 		}
+		
+		
+		
 		
 		for(i=0; i<targets.Size(); i+=1)
 		{	
@@ -1159,10 +1206,10 @@ class W3Petard extends CThrowable
 			for(j=0; j<params.buffs.Size(); j+=1)
 			{
 				
-				if( canUsePerk20 )
-				{
-					params.buffs[j].effectCustomParam = DoTBuff;
-				}
+				
+				
+				params.buffs[j].effectCustomParam = DoTBuff;
+				
 				
 				action.AddEffectInfo(params.buffs[j].effectType, params.buffs[j].effectDuration, params.buffs[j].effectCustomValue, params.buffs[j].effectAbilityName, params.buffs[j].effectCustomParam, params.buffs[j].applyChance);
 			}

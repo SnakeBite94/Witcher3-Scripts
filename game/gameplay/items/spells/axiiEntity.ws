@@ -181,7 +181,7 @@ statemachine class W3AxiiEntity extends W3SignEntity
 		ownerPos = ownerActor.GetWorldPosition();
 		
 		
-		actors = ownerActor.GetNPCsAndPlayersInCone(15, VecHeading(ownerActor.GetHeadingVector()), 120, 20, , FLAG_OnlyAliveActors + FLAG_TestLineOfSight);
+		actors = ownerActor.GetNPCsAndPlayersInCone(15, VecHeading(ownerActor.GetHeadingVector()), 270, 20, , FLAG_OnlyAliveActors + FLAG_TestLineOfSight); 
 					
 		
 		for(i=actors.Size()-1; i>=0; i-=1)

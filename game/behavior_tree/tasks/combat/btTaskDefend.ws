@@ -56,7 +56,7 @@ class CBTTaskDefend extends IBehTreeTask
 			if( (CBaseGameplayEffect) data.causer )
 				return true;
 			
-			if( playParrySound )			
+			if( !data.isDoTDamage && playParrySound )			
 				npc.SoundEvent( "cmb_play_parry" );
 				
 			if ( data.customHitReactionRequested )
@@ -82,6 +82,16 @@ class CBTTaskDefend extends IBehTreeTask
 				Complete(true);
 			return true;
 		}
+		
+		else if ( eventName == 'DamageTaken' )
+		{
+			data = (CDamageData) GetEventParamBaseDamage();
+			
+			if( !data.isDoTDamage && playParrySound )			
+				npc.SoundEvent( "cmb_play_parry" );
+		}
+		
+		
 		return false;
 	}
 	

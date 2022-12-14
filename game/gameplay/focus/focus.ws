@@ -194,8 +194,35 @@ import class CFocusModeController extends IGameSystem
 	
 	private function ActivateInternal()
 	{
+		
+		var hud : CR4ScriptedHud;
+		var minimapModule : CR4HudModuleMinimap2;
+		var objectiveModule : CR4HudModuleQuests;
+		
+	
 		if ( IsActive() || !CanUseFocusMode() )
 		{
+			return;
+		}
+
+		if(thePlayer.IsCiri())
+		{
+			hud = (CR4ScriptedHud)theGame.GetHud();
+			if(hud)
+			{
+				minimapModule = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+				objectiveModule = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
+				
+				if(minimapModule)
+				{
+					minimapModule.SetIsInFocus(true);
+				}
+				
+				if(objectiveModule)
+				{
+					objectiveModule.SetIsInFocus(true);
+				}
+			}
 			return;
 		}
 		
@@ -218,14 +245,58 @@ import class CFocusModeController extends IGameSystem
 		{
 			thePlayer.AddEffectDefault( EET_Mutation12Cat, thePlayer, "Mutation12 Senses", false );
 		}
+		
+		
+		hud = (CR4ScriptedHud)theGame.GetHud();
+		if(hud)
+		{
+			minimapModule = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+			objectiveModule = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
+			
+			if(minimapModule)
+			{
+				minimapModule.SetIsInFocus(true);
+			}
+			
+			if(objectiveModule)
+			{
+				objectiveModule.SetIsInFocus(true);
+			}
+		}
+		
 	}
 
 	public function Deactivate()
 	{
 		var hud : CR4ScriptedHud;
 		var module : CR4HudModuleInteractions;
+		
+		
+		var minimapModule : CR4HudModuleMinimap2;
+		var objectiveModule : CR4HudModuleQuests;
+		
 
 		ActivateFastFocus( false );
+
+		if(thePlayer.IsCiri())
+		{
+			hud = ( CR4ScriptedHud )theGame.GetHud();
+			if(hud)
+			{
+				minimapModule = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+				objectiveModule = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
+				
+				if(minimapModule)
+				{
+					minimapModule.SetIsInFocus(false);
+				}
+				
+				if(objectiveModule)
+				{
+					objectiveModule.SetIsInFocus(false);
+				}
+			}
+		}
 
 		if ( !IsActive() )
 		{
@@ -286,6 +357,24 @@ import class CFocusModeController extends IGameSystem
 		
 		
 		thePlayer.RemoveBuff( EET_Mutation12Cat );
+		
+		
+		if(hud)
+		{
+			minimapModule = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+			objectiveModule = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
+			
+			if(minimapModule)
+			{
+				minimapModule.SetIsInFocus(false);
+			}
+			
+			if(objectiveModule)
+			{
+				objectiveModule.SetIsInFocus(false);
+			}
+		}
+		
 	}
 
 	function CanUseFocusMode() : bool

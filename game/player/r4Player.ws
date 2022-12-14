@@ -266,8 +266,8 @@ statemachine abstract import class CR4Player extends CPlayer
 	
 	
 	private			var battlecry_timeForNext			: float;
-	private 		var battlecry_delayMin				: float;	default battlecry_delayMin = 15;
-	private 		var battlecry_delayMax				: float;	default battlecry_delayMax = 60;
+	private 		var battlecry_delayMin				: float;	default battlecry_delayMin = 10;
+	private 		var battlecry_delayMax				: float;	default battlecry_delayMax = 55;
 	private			var battlecry_lastTry				: name;
 	
 	
@@ -429,6 +429,9 @@ statemachine abstract import class CR4Player extends CPlayer
 		return 0;
 	}
 	
+	public function ApplyCastSettings()
+	{
+	}
 	
 	
 	
@@ -451,6 +454,9 @@ statemachine abstract import class CR4Player extends CPlayer
 		var i : int;
 		var item : SItemUniqueId;
 		
+		
+		var tempItem : SItemUniqueId;
+		
 		AddAnimEventCallback('ThrowHoldTest',			'OnAnimEvent_ThrowHoldTest');
 		AddAnimEventCallback('OnWeaponDrawReady',		'OnAnimEvent_OnWeaponDrawReady');
 		AddAnimEventCallback('OnWeaponHolsterReady',	'OnAnimEvent_OnWeaponHolsterReady');
@@ -471,6 +477,11 @@ statemachine abstract import class CR4Player extends CPlayer
 		AddAnimEventCallback('RemoveBurning',			'OnAnimEvent_RemoveBurning');
 		AddAnimEventCallback('RemoveTangled',			'OnAnimEvent_RemoveTangled');
 		AddAnimEventCallback('MoveNoise',				'OnAnimEvent_MoveNoise');
+		
+		
+		AddAnimEventCallback('ClimbCameraOn',			'OnAnimEvent_ClimbCameraOn');
+		AddAnimEventCallback('ClimbCameraOff',			'OnAnimEvent_ClimbCameraOff');		
+		AddAnimEventCallback('LadderCamReset',			'OnAnimEvent_LadderCamReset');
 		
 		AddItemPerLevelList();
 		
@@ -662,6 +673,17 @@ statemachine abstract import class CR4Player extends CPlayer
 		{
 			SetLastInstantKillTime( GameTimeCreate(0) );
 		}
+		
+		
+		SetPlayerCameraPreset();
+		
+		GetWitcherPlayer().UnequipItemFromSlot(EES_Petard2,true);
+		
+		this.GetInventory().GetItemEquippedOnSlot( EES_Quickslot2, tempItem );
+		if(this.GetInventory().IsIdValid(tempItem) && this.GetInventory().GetItemCategory(tempItem) != 'mask')
+		{
+			GetWitcherPlayer().UnequipItemFromSlot(EES_Quickslot2,true);
+		}		
 	}
 	
 	public function NewGamePlusInitialize()
@@ -706,6 +728,10 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		
 		theGame.ReleaseNoSaveLock( noSaveLock );
+	}
+
+	public function OnShieldHit()
+	{
 	}
 	
 	
@@ -1017,6 +1043,135 @@ statemachine abstract import class CR4Player extends CPlayer
 	}
 	
 	
+	
+	private function CheckForPreviousLevelOilExploit(oilName : name, oils : array< W3Effect_Oil >)
+	{
+		var oilsToCheck : array<name>;
+		var i : int;
+	
+		switch( oilName )
+		{
+			case 'Beast Oil 3':
+			case 'Beast Oil 2':
+			case 'Beast Oil 1':
+				oilsToCheck.PushBack('Beast Oil 3');
+				oilsToCheck.PushBack('Beast Oil 2');
+				oilsToCheck.PushBack('Beast Oil 1');
+				break;
+				
+			case 'Cursed Oil 3':
+			case 'Cursed Oil 2':
+			case 'Cursed Oil 1':
+				oilsToCheck.PushBack('Cursed Oil 3');
+				oilsToCheck.PushBack('Cursed Oil 2');
+				oilsToCheck.PushBack('Cursed Oil 1');
+				break;
+			
+			case 'Draconide Oil 3':
+			case 'Draconide Oil 2':
+			case 'Draconide Oil 1':
+				oilsToCheck.PushBack('Draconide Oil 3');
+				oilsToCheck.PushBack('Draconide Oil 2');
+				oilsToCheck.PushBack('Draconide Oil 1');
+				break;
+				
+			case 'Hanged Man Venom 3':
+			case 'Hanged Man Venom 2':
+			case 'Hanged Man Venom 1':
+				oilsToCheck.PushBack('Hanged Man Venom 3');
+				oilsToCheck.PushBack('Hanged Man Venom 2');
+				oilsToCheck.PushBack('Hanged Man Venom 1');
+				break;
+				
+			case 'Hybrid Oil 3':
+			case 'Hybrid Oil 2':
+			case 'Hybrid Oil 1':
+				oilsToCheck.PushBack('Hybrid Oil 3');
+				oilsToCheck.PushBack('Hybrid Oil 2');
+				oilsToCheck.PushBack('Hybrid Oil 1');
+				break;
+				
+			case 'Insectoid Oil 3':
+			case 'Insectoid Oil 2':
+			case 'Insectoid Oil 1':
+				oilsToCheck.PushBack('Insectoid Oil 3');
+				oilsToCheck.PushBack('Insectoid Oil 2');
+				oilsToCheck.PushBack('Insectoid Oil 1');
+				break;
+				
+			case 'Magicals Oil 3':
+			case 'Magicals Oil 2':
+			case 'Magicals Oil 1':
+				oilsToCheck.PushBack('Magicals Oil 3');
+				oilsToCheck.PushBack('Magicals Oil 2');
+				oilsToCheck.PushBack('Magicals Oil 1');
+				break;
+				
+			case 'Necrophage Oil 3':
+			case 'Necrophage Oil 2':
+			case 'Necrophage Oil 1':
+				oilsToCheck.PushBack('Necrophage Oil 3');
+				oilsToCheck.PushBack('Necrophage Oil 2');
+				oilsToCheck.PushBack('Necrophage Oil 1');
+				break;
+				
+			case 'Ogre Oil 3':
+			case 'Ogre Oil 2':
+			case 'Ogre Oil 1':
+				oilsToCheck.PushBack('Ogre Oil 3');
+				oilsToCheck.PushBack('Ogre Oil 2');
+				oilsToCheck.PushBack('Ogre Oil 1');
+				break;
+				
+			case 'Relic Oil 3':
+			case 'Relic Oil 2':
+			case 'Relic Oil 1':
+				oilsToCheck.PushBack('Relic Oil 3');
+				oilsToCheck.PushBack('Relic Oil 2');
+				oilsToCheck.PushBack('Relic Oil 1');
+				break;
+				
+			case 'Specter Oil 3':
+			case 'Specter Oil 2':
+			case 'Specter Oil 1':
+				oilsToCheck.PushBack('Specter Oil 3');
+				oilsToCheck.PushBack('Specter Oil 2');
+				oilsToCheck.PushBack('Specter Oil 1');
+				break;
+				
+			case 'Vampire Oil 3':
+			case 'Vampire Oil 2':
+			case 'Vampire Oil 1':
+				oilsToCheck.PushBack('Vampire Oil 3');
+				oilsToCheck.PushBack('Vampire Oil 2');
+				oilsToCheck.PushBack('Vampire Oil 1');
+				break;
+		}	
+		
+		oilsToCheck.Remove(oilName);
+
+		for( i=0; i<oilsToCheck.Size(); i+=1 )
+		{	
+			CheckIfPreviousOilApplied(oilsToCheck[i], oils);
+		}
+	}
+	
+	private function CheckIfPreviousOilApplied(oil : name, oils : array< W3Effect_Oil >)
+	{
+		var i : int;
+	
+		for( i=0; i<oils.Size(); i+=1 )
+		{	
+			if( oils[ i ].GetOilItemName() == oil )
+			{
+				RemoveEffect( oils[ i ] );
+			}
+		}
+	}
+	
+	
+	
+	
 	public function ApplyOil( oilId : SItemUniqueId, usedOnItem : SItemUniqueId ) : bool
 	{
 		var oilAbilities : array< name >;
@@ -1051,16 +1206,27 @@ statemachine abstract import class CR4Player extends CPlayer
 		}
 		
 		
+		if(CanUseSkill(S_Alchemy_s06))
+			CheckForPreviousLevelOilExploit(oilName,oils);
+		
+		
+		
 		if( !existingOil )
 		{
-			if( !GetWitcherPlayer() || !GetWitcherPlayer().IsSetBonusActive( EISB_Wolf_1 ) )
+			
+			
+			if( !GetWitcherPlayer() || !CanUseSkill(S_Alchemy_s06) )
+			
 			{
 				inv.RemoveAllOilsFromItem( usedOnItem );
 			}
 			else
 			{
-				dm.GetAbilityAttributeValue( GetSetBonusAbility( EISB_Wolf_1 ), 'max_oils_count', min, max );
-				if( inv.GetActiveOilsAppliedOnItemCount( usedOnItem ) >= CalculateAttributeValue( max ) )
+				
+				
+				
+				if( inv.GetActiveOilsAppliedOnItemCount( usedOnItem ) >= GetSkillLevel( S_Alchemy_s06 ) )
+				
 				{
 					inv.RemoveOldestOilFromItem( usedOnItem );
 				}
@@ -1250,7 +1416,8 @@ statemachine abstract import class CR4Player extends CPlayer
 			|| theGame.IsCurrentlyPlayingNonGameplayScene()
 			|| theGame.IsFading()
 			|| theGame.IsBlackscreen()
-			|| FactsQuerySum("force_stance_normal") > 0 ) 
+			|| FactsQuerySum("force_stance_normal") > 0 
+			|| FactsQuerySum("block_geralts_battlecries") > 0 ) 
 		{
 			return;
 		}
@@ -1632,6 +1799,7 @@ statemachine abstract import class CR4Player extends CPlayer
 						repelType = PRT_SideStepSlash;
 						parryInfo.attacker.AddEffectDefault(EET_CounterStrikeHit, this, "ReflexParryPerformed");
 						parryInfo.attacker.SignalGameplayEvent( 'SpearDestruction');
+						((CNewNPC)parryInfo.attacker).ProcessSpearDestruction();
 					}
 					else if( isMutation8 && npc && !npc.IsImmuneToMutation8Finisher() )
 					{
@@ -1967,7 +2135,13 @@ statemachine abstract import class CR4Player extends CPlayer
 		FactsRemove("statistics_cerberus_environment");
 		
 		if(cnt >= 3)
+		{
 			theGame.GetGamerProfile().AddAchievement(EA_Cerberus);
+		}
+		else
+		{
+			theGame.GetGamerProfile().NoticeAchievementProgress(EA_Cerberus, cnt);
+		}
 		
 		
 		if(theGame.GetTutorialSystem() && FactsQuerySum("TutorialShowSilver") > 0)
@@ -2312,6 +2486,7 @@ statemachine abstract import class CR4Player extends CPlayer
 	private final function CheckOfirSetAchievement()
 	{
 		var hasArmor, hasBoots, hasGloves, hasPants, hasSword, hasSaddle, hasBag, hasBlinders : bool;
+		var doneItems : int;
 		
 		
 		CheckOfirItems(GetInventory(), hasArmor, hasBoots, hasGloves, hasPants, hasSword, hasSaddle, hasBag, hasBlinders);
@@ -2319,8 +2494,33 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		CheckOfirItems(GetWitcherPlayer().GetHorseManager().GetInventoryComponent(), hasArmor, hasBoots, hasGloves, hasPants, hasSword, hasSaddle, hasBag, hasBlinders);
 		
-		if(hasArmor && hasBoots && hasGloves && hasPants && hasSword && hasSaddle && hasBag && hasBlinders)
+		
+		doneItems = 0;
+		if(hasArmor)
+			doneItems += 1;
+		if(hasBoots)
+			doneItems += 1;
+		if(hasGloves)
+			doneItems += 1;
+		if(hasPants)
+			doneItems += 1;
+		if(hasSword)
+			doneItems += 1;
+		if(hasSaddle)
+			doneItems += 1;
+		if(hasBag)
+			doneItems += 1;
+		if(hasBlinders)
+			doneItems += 1;
+		
+		if(doneItems >= 8)
+		{
 			theGame.GetGamerProfile().AddAchievement(EA_LatestFashion);
+		}
+		else
+		{
+			theGame.GetGamerProfile().NoticeAchievementProgress(EA_LatestFashion, doneItems);
+		}
 	}
 	
 	private final function CheckOfirItems(inv : CInventoryComponent, out hasArmor : bool, out hasBoots : bool, out hasGloves : bool, out hasPants : bool, out hasSword : bool, out hasSaddle : bool, out hasBag : bool, out hasBlinders : bool)
@@ -2743,6 +2943,34 @@ statemachine abstract import class CR4Player extends CPlayer
 		SetImmortalityMode( AIM_None, AIC_SyncedAnim );
 		super.OnBlockingSceneEnded(output);
 	}
+
+	
+	event OnDismountCSHolsterWeapon()
+	{
+		var steel, silver : SItemUniqueId;
+		var hud : CR4ScriptedHud;
+		var qst : CR4HudModuleQuests;		
+		var mm : CR4HudModuleMinimap2;
+		
+		hud = (CR4ScriptedHud)theGame.GetHud();
+		if(hud)
+		{
+			mm = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+			qst = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
+			
+			if(mm)
+				mm.SetIsInDlg(true);
+				
+			if(qst)
+				qst.SetIsInDlg(true);	
+		}
+	
+		if( inv.GetItemEquippedOnSlot(EES_SilverSword, silver) && inv.IsItemHeld(silver))
+			HolsterItems(true, silver);
+		if( inv.GetItemEquippedOnSlot(EES_SteelSword, steel) && inv.IsItemHeld(steel))
+			HolsterItems(true, steel);
+	}
+	
 	
 	
 	
@@ -3845,6 +4073,14 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		if ( theGame.IsFocusModeActive() )
 		{
+			
+			if(GetExplCamera())
+			{
+				
+				return true;
+			}
+			
+		
 			theGame.GetGameCamera().ChangePivotRotationController( 'Exploration' );
 			theGame.GetGameCamera().ChangePivotDistanceController( 'Default' );
 			theGame.GetGameCamera().ChangePivotPositionController( 'Default' );
@@ -3880,14 +4116,7 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		
 		
-		if( substateManager.m_SharedDataO.IsForceHeading( targetRotation ) )
-		{
-			moveData.pivotRotationController.SetDesiredHeading( targetRotation.Yaw );
-			moveData.pivotRotationController.SetDesiredPitch( targetRotation.Pitch );
-			moveData.pivotRotationValue.Yaw		= LerpAngleF( 2.1f * dt, moveData.pivotRotationValue.Yaw, targetRotation.Yaw );
-			moveData.pivotRotationValue.Pitch	= LerpAngleF( 1.0f * dt, moveData.pivotRotationValue.Pitch, targetRotation.Pitch );
-			
-		}
+		
 		
 		
 		if( customCameraStack.Size() > 0 )
@@ -3923,6 +4152,14 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		var distance : float;
 		
+		
+		if(GetExplCamera() && substateManager.GetStateCur() == 'Interaction')
+		{
+			moveData.pivotDistanceController.SetDesiredDistance( 1.5f );
+			DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.7f, -0.3f, 0.3f ), 0.5f, dt );
+		}
+		
+				
 		
 		
 		if ( questCameraRequest.requestTimeStamp > 0 )
@@ -3974,7 +4211,7 @@ statemachine abstract import class CR4Player extends CPlayer
 		var rotMultDest	: float;
 		var rotMult	: float;
 		var angles		: EulerAngles;
-			
+
 		theGame.GetGameCamera().ChangePivotRotationController( 'ExplorationInterior' );
 		theGame.GetGameCamera().ChangePivotDistanceController( 'Default' );
 		theGame.GetGameCamera().ChangePivotPositionController( 'Default' );
@@ -4057,6 +4294,10 @@ statemachine abstract import class CR4Player extends CPlayer
 	}
 	
 	
+	private var closeSignCam : bool;
+	public function GetCloseSignCam() : bool {return closeSignCam;}
+	
+	
 	var wasBRAxisPushed 					: bool;
 	protected function UpdateCameraChanneledSign( out moveData : SCameraMovementData, timeDelta : float ) : bool
 	{	
@@ -4086,8 +4327,14 @@ statemachine abstract import class CR4Player extends CPlayer
 
 			if ( oTCameraOffset != leftOffset && oTCameraOffset != rightOffset  )
 			{
-				if( ( interiorCamera && !moveTarget )
-					|| ( AngleDistance( GetHeading(), moveData.pivotRotationValue.Yaw ) < 0 ) )
+				
+				if( (GetExplCamera() && !IsInCombat()) || (GetCmbtCamera() && IsInCombat()) )
+				{
+					oTCameraOffset = leftOffset;
+					closeSignCam = true;
+				}
+				else if( ( interiorCamera && !moveTarget )
+					|| ( AngleDistance( GetHeading(), moveData.pivotRotationValue.Yaw ) < 0 ))
 					oTCameraOffset = leftOffset;				
 				else
 					oTCameraOffset = rightOffset;
@@ -4095,13 +4342,13 @@ statemachine abstract import class CR4Player extends CPlayer
 			
 			if ( oTCameraOffset == leftOffset )
 			{
-				screenSpaceOffset = 0.65f;
+				screenSpaceOffset = 0.95f; 
 				oTCameraPitchOffset = 13.f; 
 				
 			}
 			else if ( oTCameraOffset == rightOffset )
 			{
-				screenSpaceOffset = -0.65f;
+				screenSpaceOffset = -0.95f; 
 				oTCameraPitchOffset = 13.f; 
 				
 			}
@@ -4159,31 +4406,36 @@ statemachine abstract import class CR4Player extends CPlayer
 			
 			if ( moveData.pivotRotationValue.Pitch <= 5.f && moveData.pivotRotationValue.Pitch >= -15.f )
 			{
-				screenSpaceOffsetFwd = 1.8;
-				screenSpaceOffsetUp = 0.4;
+				screenSpaceOffsetFwd = 0.5; 
+				screenSpaceOffsetUp = 0.0; 
 			}
 			else if ( moveData.pivotRotationValue.Pitch > 0 )
 			{
 				screenSpaceOffsetFwd = moveData.pivotRotationValue.Pitch*0.00727 + 1.275f;
-				screenSpaceOffsetFwd = ClampF( screenSpaceOffsetFwd, 1.5, 2.2 );
+				
+				screenSpaceOffsetFwd = 0.5;	
 				
 				screenSpaceOffsetUp = -moveData.pivotRotationValue.Pitch*0.00727 + 0.4363f;
-				screenSpaceOffsetUp = ClampF( screenSpaceOffsetUp, 0, 0.3 );		
+				
+				screenSpaceOffsetUp = 0;		
 			}
 			else	
 			{
 				if ( GetCurrentlyCastSign() == ST_Axii )
 				{
 					screenSpaceOffsetFwd = -moveData.pivotRotationValue.Pitch*0.0425 + 0.8625f;		
-					screenSpaceOffsetFwd = ClampF( screenSpaceOffsetFwd, 1.5, 2.3 );
+					
+					screenSpaceOffsetFwd = 0.5;
 				}
 				else
 				{
 					screenSpaceOffsetFwd = -moveData.pivotRotationValue.Pitch*0.035 + 0.75f;
-					screenSpaceOffsetFwd = ClampF( screenSpaceOffsetFwd, 1.5, 2.6 );
+					
+					screenSpaceOffsetFwd = 0.5;
 				}
 				screenSpaceOffsetUp = -moveData.pivotRotationValue.Pitch*0.005 + 0.325f;
-				screenSpaceOffsetUp = ClampF( screenSpaceOffsetUp, 0.4, 0.5 );				
+				
+				screenSpaceOffsetUp = 0;				
 			}
 				
 			DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( screenSpaceOffset, screenSpaceOffsetFwd, screenSpaceOffsetUp ), 0.25f, timeDelta );
@@ -4194,6 +4446,7 @@ statemachine abstract import class CR4Player extends CPlayer
 		}
 		else
 		{
+			closeSignCam = false;	
 			this.wasBRAxisPushed = false;
 			
 			return false;
@@ -4316,6 +4569,13 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		var playerToCamAngle : float;
 		var useExplorationSprintCam	: bool;
+		
+		
+		if(GetExplCamera() || GetCmbtCamera())
+		{
+			return;
+		}		
+		
 		
 		camera = theGame.GetGameCamera();
 		if( camera )
@@ -4467,7 +4727,7 @@ statemachine abstract import class CR4Player extends CPlayer
 		var runningAndAlertNear		: bool;
 		var desiredDist				: float;
 	
-		if ( ( !IsCurrentSignChanneled() || GetCurrentlyCastSign() == ST_Quen || GetCurrentlyCastSign() == ST_Yrden ) && !specialAttackCamera && !IsInCombatActionFriendly() )
+		if ( !GetExplCamera() && !GetCmbtCamera() &&   ( !IsCurrentSignChanneled() || GetCurrentlyCastSign() == ST_Quen || GetCurrentlyCastSign() == ST_Yrden ) && !specialAttackCamera && !IsInCombatActionFriendly() )
 		{
 			buff = GetCurrentlyAnimatedCS();
 			runningAndAlertNear = GetPlayerCombatStance() == PCS_AlertNear && playerMoveType == PMT_Run && !GetDisplayTarget();
@@ -5142,6 +5402,16 @@ statemachine abstract import class CR4Player extends CPlayer
 		if ( thePlayer.GetIsSprintToggled() )
 		{
 		}
+		
+		else if(GetLeftStickSprint() && theInput.LastUsedGamepad())
+		{		
+			if(GetIsSprintToggled() && GetIsSprinting())
+			{
+			}
+			else if(!GetIsSprintToggled())
+				return false;
+		}
+		
 		else if ( !sprintActionPressed )
 		{
 			return false;
@@ -8320,7 +8590,7 @@ statemachine abstract import class CR4Player extends CPlayer
 				theGame.VibrateControllerHard();
 		}
 		
-		if ( (CActor)GetUsedVehicle() && this.playerAiming.GetCurrentStateName() == 'Aiming' )
+		if ( (CActor)GetUsedVehicle() && this.playerAiming.GetCurrentStateName() == 'Aiming' && !damageAction.IsDoTDamage()) 
 		{
 			OnRangedForceHolster( true, true );
 		}
@@ -9796,6 +10066,7 @@ statemachine abstract import class CR4Player extends CPlayer
 				PushCombatActionOnBuffer( EBAT_SpecialAttack_Heavy, BS_Released );
 				ProcessCombatActionBuffer();
 				
+				theGame.HapticStart( "haptic_rend_stop" );
 			}
 		}
 	}	
@@ -10023,8 +10294,7 @@ statemachine abstract import class CR4Player extends CPlayer
 	
 		npc = (CNewNPC)actor;
 		
-		if ( npc && 
-			( GetAttitudeBetween(thePlayer, npc) == AIA_Hostile || ( GetAttitudeBetween(thePlayer, npc) == AIA_Neutral && npc.GetNPCType() != ENGT_Guard ) ) )
+		if ( npc && !npc.HasTag('force_friendly_action') && ( GetAttitudeBetween(thePlayer, npc) == AIA_Hostile || ( GetAttitudeBetween(thePlayer, npc) == AIA_Neutral && npc.GetNPCType() != ENGT_Guard ) ) )
 		{
 		}
 		else
@@ -10532,6 +10802,10 @@ statemachine abstract import class CR4Player extends CPlayer
 	
 	public final function HasRequiredLevelToEquipItem(item : SItemUniqueId) : bool
 	{
+		
+		if (thePlayer.IsCiri())
+			return true;
+	
 		if(HasBuff(EET_WolfHour))
 		{
 			if((inv.GetItemLevel(item) - 2) > GetLevel() )
@@ -10872,7 +11146,7 @@ statemachine abstract import class CR4Player extends CPlayer
 		ret = ( CanUseSkill(skill) && (abilityManager.GetStat(BCS_Stamina, signHack) >= cost) );
 		
 		
-		if(!ret && IsSkillSign(skill) && CanUseSkill(S_Perk_09) && GetStat(BCS_Focus) >= 1)
+		if(!ret && IsSkillSign(skill) && CanUseSkill(S_Perk_09) && (GetStat(BCS_Focus) >= 1 || GetWitcherPlayer().IsSuperchargedSign()) ) 
 		{
 			ret = true;
 		}
@@ -11902,7 +12176,11 @@ statemachine abstract import class CR4Player extends CPlayer
 		
 		
 		
-		SetAttackActionName('');
+		
+		if(!IsDoingSpecialAttack(true))
+			SetAttackActionName('');
+		
+		
 		combatActionType = GetBehaviorVariable('combatActionType');
 		
 		
@@ -12005,8 +12283,8 @@ statemachine abstract import class CR4Player extends CPlayer
 			
 			animation.animation = cameraAnimName;
 			animation.priority = CAP_Highest;
-			animation.blendIn = 0.15f;
-			animation.blendOut = 1.0f;
+			animation.blendIn = 0.5f;	
+			animation.blendOut = 0.5f; 	
 			animation.weight = 1.f;
 			animation.speed	= 1.0f;
 			animation.reset = true;
@@ -12533,6 +12811,9 @@ statemachine abstract import class CR4Player extends CPlayer
 			return;
 		}
 		
+		
+		theGame.RemoveTimeScale( theGame.GetTimescaleSource(ETS_DebugInput) );
+		
 		SetAlive(true);
 		
 		SetKinematic(true);
@@ -12607,6 +12888,13 @@ statemachine abstract import class CR4Player extends CPlayer
 	
 	public function SetIsInsideHorseInteraction( b : bool, horse : CEntity )
 	{
+		
+		if(b)
+			horse.SetBehaviorVariable( 'horsePetting', 1.0f );
+		else if(!isPettingHorse)
+			horseInteractionSource.SetBehaviorVariable( 'horsePetting', 0.0f );
+		
+	
 		isInsideHorseInteraction = b;
 		horseInteractionSource = horse;
 	}
@@ -12955,6 +13243,9 @@ statemachine abstract import class CR4Player extends CPlayer
 				currentlyEquipedItemL = selectedItemId;
 				SetUsableItemLtransitionAllowed ( false );
 				currentlyUsingItem = true;
+				
+				
+				SetBehaviorVariable('playerDoubleHandSword',0.0f);
 		
 				return true;
 			}
@@ -13455,13 +13746,19 @@ statemachine abstract import class CR4Player extends CPlayer
 		{
 			npc = (CNewNPC)action.victim;
 			
-			if(npc && npc.IsHuman() )
+			
+			if ( npc && npc.UsesEssence() )
 			{
-				PlayBattleCry('BattleCryHumansHit', 0.05f );
+				PlayBattleCry( 'BattleCryMonstersSilverHit', 0.09f );
+			}
+			
+			else if(npc && (npc.IsHuman() || npc.GetMovingAgentComponent().GetName() == "wild_hunt_base") )
+			{
+				PlayBattleCry('BattleCryHumansHit', 0.09f );
 			}
 			else
 			{
-				PlayBattleCry('BattleCryMonstersHit', 0.05f );
+				PlayBattleCry('BattleCryMonstersHit', 0.09f );
 			}
 			
 			if(attackAction.IsActionMelee())
@@ -13870,7 +14167,15 @@ statemachine abstract import class CR4Player extends CPlayer
 		for( i = 0; i < size; i += 1 )
 		{
 			if( glossaryImageOverride[i].uniqueTag == uniqueTag )
+			{
+				
+				if(glossaryImageOverride[i].imageFileName == "GlossaryPictureOverride to journal_roach_q110.png")
+				{
+					EnableGlossaryImageOverride(uniqueTag, "journal_roach_q110.png", true );
+					return "journal_roach_q110.png";
+				}
 				return glossaryImageOverride[i].imageFileName;
+			}
 			
 		}
 		
@@ -14281,7 +14586,10 @@ statemachine abstract import class CR4Player extends CPlayer
 	event OnOpenningDoor()
 	{
 		if( !thePlayer.IsUsingHorse() )
+		{
 			RaiseEvent('OpenDoor');
+			theSound.SoundEvent("global_door_haptic_open");
+		}
 	}
 	
 	public final function SetLoopingCameraShakeAnimName( n : name )
@@ -14661,7 +14969,271 @@ statemachine abstract import class CR4Player extends CPlayer
 		forcedFinisherVictim.SignalGameplayEvent( 'Finisher' );
 		forcedFinisherVictim = NULL;
 	}
+	
+	
+	
+	protected var climbingCam : bool;	default climbingCam = false;	
+	event OnAnimEvent_ClimbCameraOn( animEventName : name, animEventType : EAnimationEventType, animInfo : SAnimationEventAnimInfo )
+	{
+		climbingCam = true;
+	}
+	
+	event OnAnimEvent_ClimbCameraOff( animEventName : name, animEventType : EAnimationEventType, animInfo : SAnimationEventAnimInfo )
+	{
+		climbingCam = false;
+	}
+	
+	
+	
+	private var ladderCamReset : bool;	default ladderCamReset = false;	
+	public function SetLadderCamReset(b : bool) { ladderCamReset = b; }
+	public function GetLadderCamReset() : bool { return ladderCamReset; }
+	event OnAnimEvent_LadderCamReset( animEventName : name, animEventType : EAnimationEventType, animInfo : SAnimationEventAnimInfo )
+	{
+		ladderCamReset = true;
+	}
+	
+	
+	
+	private var tempHorse : CEntity;
+	private var isPettingHorse : bool;
+	
+	public function TryPetHorse()
+	{
+		var horseComp : W3HorseComponent;
+		var rightPoint, leftPoint, tempPoint1, tempPoint2 : Vector;
+		var outPosition, outNormal : Vector;
+		
+		isPettingHorse = false;
+		tempHorse = horseInteractionSource;
+	
+		if( !tempHorse || IsInCombat() || IsAnyWeaponHeld() || IsCiri() )
+			return;
+			
+		horseComp = ((CNewNPC)tempHorse).GetHorseComponent();			
+		if( !horseComp )
+			return;
+			
+		if( horseComp.IsMounted() )
+			return;
+			
+		if( ((CActor)tempHorse).IsMoving() || VecLength( ((CActor)tempHorse).GetMovingAgentComponent().GetVelocity() ) > 0 )
+			return;
+
+		rightPoint = tempHorse.GetWorldPosition() + VecConeRand(tempHorse.GetHeading() - 90, 0, 1,1);
+		leftPoint = tempHorse.GetWorldPosition() + VecConeRand(tempHorse.GetHeading() + 90, 0, 1,1);
+		
+		if( VecDistance(GetWorldPosition(),rightPoint) >= 1.f && VecDistance(GetWorldPosition(),leftPoint) >= 1.f )
+			return;
+		
+		if( VecDistance(GetWorldPosition(), rightPoint) < VecDistance(GetWorldPosition(), leftPoint) )
+		{
+			tempPoint1 = rightPoint;
+			tempPoint1.Z += 1.5;
+			
+			tempPoint2 = rightPoint;
+			tempPoint2.Z -= 1.5;
+			
+			
+			if( theGame.GetWorld().StaticTrace( tempPoint1, tempPoint2, outPosition, outNormal ) )
+			{
+				if( AbsF(outPosition.Z - rightPoint.Z) > 0.12 )
+					return;
+			}
+			else
+				return;
+			
+			
+			isPettingHorse = true;
+			theGame.GetSyncAnimManager().SetupSimpleSyncAnim2( 'PetHorse', thePlayer, tempHorse );
+			AddTimer('EnablePlayerCollisions',6.56,false);			
+		}
+		else
+		{
+			tempPoint1 = leftPoint;
+			tempPoint1.Z += 1.5;
+			
+			tempPoint2 = leftPoint;
+			tempPoint2.Z -= 1.5;
+			
+			
+			if( theGame.GetWorld().StaticTrace( tempPoint1, tempPoint2, outPosition, outNormal ) )
+			{
+				if( AbsF(outPosition.Z - leftPoint.Z) > 0.12 )
+					return;
+			}
+			else
+				return;
+				
+				
+			isPettingHorse = true;
+			theGame.GetSyncAnimManager().SetupSimpleSyncAnim2( 'PetHorse', thePlayer, tempHorse );
+			AddTimer('EnablePlayerCollisions',5.03,false);
+		}
+		
+		horseComp.AllowLookat(false);
+		EnableCollisions( false );
+		BlockAction( EIAB_Sprint, 'PettingHorse' );
+		BlockAction( EIAB_Jump, 'PettingHorse' );
+		BlockAction( EIAB_Movement, 'PettingHorse' );
+		BlockAction( EIAB_CallHorse, 'PettingHorse' );
+		BlockAction( EIAB_MountVehicle, 'PettingHorse' );
+		BlockAction( EIAB_DrawWeapon, 'PettingHorse' );
+		BlockAction( EIAB_Signs, 'PettingHorse' );
+		BlockAction( EIAB_LightAttacks, 'PettingHorse' );
+		BlockAction( EIAB_HeavyAttacks, 'PettingHorse' ); 
+		BlockAction( EIAB_ThrowBomb, 'PettingHorse' ); 		
+		BlockAction( EIAB_Crossbow, 'PettingHorse' ); 		
+		BlockAction( EIAB_UsableItem, 'PettingHorse' ); 		
+		
+		tempHorse.SetBehaviorVariable( 'horsePetting', 1.0f );
+	}
+	
+	timer function EnablePlayerCollisions(dt:float, id:int)
+	{
+		isPettingHorse = false;
+		EnableCollisions( true );
+		UnblockAction( EIAB_Sprint, 'PettingHorse' );
+		UnblockAction( EIAB_Jump, 'PettingHorse' );
+		UnblockAction( EIAB_Movement, 'PettingHorse' );
+		UnblockAction( EIAB_CallHorse, 'PettingHorse' );
+		UnblockAction( EIAB_MountVehicle, 'PettingHorse' );
+		UnblockAction( EIAB_DrawWeapon, 'PettingHorse' );
+		UnblockAction( EIAB_Signs, 'PettingHorse' );
+		UnblockAction( EIAB_LightAttacks, 'PettingHorse' );
+		UnblockAction( EIAB_HeavyAttacks, 'PettingHorse' ); 
+		UnblockAction( EIAB_ThrowBomb, 'PettingHorse' ); 	
+		UnblockAction( EIAB_Crossbow, 'PettingHorse' ); 		
+		UnblockAction( EIAB_UsableItem, 'PettingHorse' ); 		
+		
+		tempHorse.SetBehaviorVariable( 'horsePetting', 0.0f );
+		((W3HorseComponent)((CNewNPC)tempHorse).GetHorseComponent()).AllowLookat(true);	
+	}
+	
+	
+	
+	private var explorationCameraToggle : bool;
+	private var combatCameraToggle : bool;
+	private var horseCameraToggle : bool;
+	private var softLockCameraAssist : bool;
+	
+	public function SetExplCamera(b : bool) { explorationCameraToggle = b; }
+	public function SetCmbtCamera(b : bool) { combatCameraToggle = b; }
+	public function SetHorseCamera(b : bool) { horseCameraToggle = b; }
+	public function SetSoftLockCameraAssist(b : bool) { softLockCameraAssist = b; }
+	
+	public function GetExplCamera() : bool { return explorationCameraToggle; }
+	public function GetCmbtCamera() : bool { return combatCameraToggle; }
+	public function GetHorseCamera() : bool { return horseCameraToggle; }
+	public function GetSoftLockCameraAssist() : bool { return softLockCameraAssist; }
+
+	public function SetPlayerCameraPreset()
+	{
+		var inGameConfigWrapper : CInGameConfigWrapper;
+		
+		inGameConfigWrapper = theGame.GetInGameConfigWrapper();	
+		if(inGameConfigWrapper.GetVarValue('Gameplay', 'EnableAlternateExplorationCamera') == "1")
+			SetExplCamera(true);
+		else
+			SetExplCamera(false);
+			
+		if(inGameConfigWrapper.GetVarValue('Gameplay', 'EnableAlternateCombatCamera') == "1")
+			SetCmbtCamera(true);
+		else
+			SetCmbtCamera(false);
+				
+		if(inGameConfigWrapper.GetVarValue('Gameplay', 'EnableAlternateHorseCamera') == "1")
+			SetHorseCamera(true);
+		else
+			SetHorseCamera(false);
+			
+		if(inGameConfigWrapper.GetVarValue('Gameplay', 'SoftLockCameraAssist') == "true")
+			SetSoftLockCameraAssist(true);
+		else
+			SetSoftLockCameraAssist(false);
+			
+		
+		if(inGameConfigWrapper.GetVarValue('Controls', 'LeftStickSprint') == "true")
+			SetLeftStickSprint(true);
+		else
+			SetLeftStickSprint(false);
+		
+	}
+	
+	
+	
+	private var leftStickSprint : bool;
+	public function SetLeftStickSprint(b : bool) { leftStickSprint = b; }	
+	public function GetLeftStickSprint() : bool	{ return leftStickSprint; }
+	
+	
+	
+	private var photomodeHorseKick : bool;
+	public function SetPhotoModeHorseKick( b : bool )
+	{
+		photomodeHorseKick = b;
+	}
+	
+	public function GetPhotoModeHorseKick() : bool
+	{
+		return photomodeHorseKick;
+	}
+	
+	
+	
+	public timer function NGE_DrainIgniStamina(dt:float, id:int)
+	{
+		var l_cost, l_stamina : float;
+	
+		if( CanUseSkill( S_Perk_09 ) )
+		{
+			l_cost = GetStaminaActionCost(ESAT_Ability, SkillEnumToName( S_Magic_2 ), 0);
+			l_stamina = GetStat(BCS_Stamina, true);
+			
+			if( l_cost > l_stamina )
+			{
+				DrainFocus(1);
+			}
+			else
+			{
+				DrainStamina( ESAT_Ability, 0, 0, SkillEnumToName( S_Magic_2 ) );
+			}
+		}
+		else
+		{
+			DrainStamina( ESAT_Ability, 0, 0, SkillEnumToName( S_Magic_2 ) );
+		}
+	}
+	
+	
+	
+	
+	private var lastSelectedItem : SItemUniqueId;
+	public function SetLastSelectedRadialItem(item : SItemUniqueId)
+	{
+		lastSelectedItem = item;
+		AddTimer('EquipRadialMenuItem', 1.2f, false);
+	}
+	
+	timer function EquipRadialMenuItem(dt:float,id:int)
+	{
+		GetWitcherPlayer().EquipItem( lastSelectedItem, EES_Quickslot1, false);
+		GetWitcherPlayer().SelectQuickslotItem( EES_Quickslot1 );
+	}
+	
 }
+
+exec function setcam(a:int, b:bool)
+{
+	if(a == 0)
+		thePlayer.SetExplCamera(b);
+	if(a == 1)
+		thePlayer.SetCmbtCamera(b);
+	if(a == 2)
+		thePlayer.SetHorseCamera(b);
+}
+
+
 
 exec function ttt()
 {

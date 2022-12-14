@@ -32,7 +32,10 @@ class CBTTaskPlayerActionDecorator extends IBehTreeTask
 	{
 		while( true )
 		{
-			if( ( theInput.GetContext() != 'ScriptedAction' ) && ( theInput.GetContext() != 'EMPTY_CONTEXT' ) )
+			if( 	( theInput.GetContext() != 'ScriptedAction' ) 
+				&& 	( theInput.GetContext() != 'EMPTY_CONTEXT' ) 
+				&&  ( theInput.GetContext() != GetPhotomodeContextName() )
+				)
 			{
 				prevContext = theInput.GetContext();
 				theInput.SetContext( 'ScriptedAction' );

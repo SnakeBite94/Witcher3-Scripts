@@ -28,6 +28,7 @@ import class CCameraDirector
 	import final function GetFov() : float;
 	
 	import final function GetTopmostCameraObject() : IScriptable;
+	import final function GetTopmostCamera() : CCustomCamera;
 	
 	
 	

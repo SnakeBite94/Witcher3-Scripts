@@ -43,7 +43,7 @@ statemachine class W3ReplacerCiri extends W3Replacer
 		BlockAction( EIAB_OpenAlchemy, 'being_ciri' );	
 		BlockAction( EIAB_OpenGlossary, 'being_ciri' );	
 		BlockAction( EIAB_CallHorse, 'being_ciri' );
-		BlockAction( EIAB_ExplorationFocus, 'being_ciri' );
+		
 		
 		SetBehaviorVariable( 'test_ciri_replacer', 1.0f);
 		

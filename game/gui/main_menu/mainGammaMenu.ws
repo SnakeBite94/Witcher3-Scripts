@@ -44,6 +44,14 @@ class CR4MainGammaMenu extends CR4MenuBase
 		mInGameConfigWrapper.SetVarValue('Visuals', 'GammaValue', optionValue);
 	}
 	
+	event  OnRefreshActiveUserDisplayName()
+	{
+		var username 			: string;
+
+		username = FixStringForFont(theGame.GetActiveUserDisplayName());
+		m_fxSetCurrentUsername.InvokeSelfOneArg(FlashArgString(username));
+	}
+
 	protected function sendGammaValueInformation():void
 	{
 		var objectToSend 		: CScriptedFlashObject;

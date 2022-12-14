@@ -675,3 +675,20 @@ class CAIMonsterIdleDecoratorGravehag extends CAIMonsterIdleDecorator
 	}
 };
 
+
+
+
+class CAIFrogIdleDecorator extends CAIMonsterIdleDecorator
+{
+	default aiTreeName = "resdef:ai\idle\frog_idle_decorator";
+	
+	
+	
+	function Init()
+	{		
+		params = new CAIMonsterIdleDecoratorParams in this;
+		params.OnCreated();
+		params.reactionTree = new CAIMonsterReactionsTree in this;
+		params.reactionTree.OnCreated();		
+	}
+}

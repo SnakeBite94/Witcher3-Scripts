@@ -78,6 +78,18 @@ state DismountTheVehicle in CPlayer extends PostUseVehicle
 	
 	event OnGameCameraPostTick( out moveData : SCameraMovementData, dt : float )
 	{
+		
+		if( (W3HorseComponent)vehicle && thePlayer.GetHorseCamera() && thePlayer.GetExplCamera())
+		{
+			moveData.pivotDistanceController.SetDesiredDistance( 1.5f );
+			if(thePlayer.IsCiri())						
+				DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 5.2f, -1.0f, 0.8f ), 2.0f, dt );
+			else
+				DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 6.0f, -3.1f, 1.2f ), 2.0f, dt );
+			return true;
+		}
+		
+	
 		moveData.pivotRotationController.SetDesiredHeading( VecHeading(theCamera.GetCameraDirection()) );
 	}
 	

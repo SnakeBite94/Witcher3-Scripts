@@ -20,3 +20,13 @@ import class CResource extends CObject
 {
 	import final function GetPath() : string;
 }
+
+import class CGameResource extends CResource
+{
+	import final function GetDefaultCameraTemplate() : CEntityTemplate;
+}
+
+import class CCommonGameResource extends CGameResource
+{
+
+}

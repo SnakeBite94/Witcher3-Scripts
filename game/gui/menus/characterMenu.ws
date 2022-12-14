@@ -1810,7 +1810,7 @@ class CR4CharacterMenu extends CR4MenuBase
 		dm.GetAbilityAttributeValue('sword_adrenalinegain', 'focus_gain', min, max);
 		ability =  GetAttributeRandomizedValue(min, max);
 		arg_focus = ability.valueAdditive;
-		
+
 		switch (targetSkill.skillType)
 		{
 			case S_Magic_1:
@@ -1996,12 +1996,14 @@ class CR4CharacterMenu extends CR4MenuBase
 		var min, max	: SAbilityAttributeValue;
 		var dm 			: CDefinitionsManagerAccessor;
 		
+		var sp 			: SAbilityAttributeValue; 
+		
 		
 		dm = theGame.GetDefinitionsManager();
 		dm.GetAbilityAttributeValue('magic_staminaregen', 'staminaRegen', min, max);
 		ability =  GetAttributeRandomizedValue(min, max);
 		arg_stamina = ability.valueMultiplicative;
-		
+
 		switch (targetSkill.skillType)
 		{
 			case S_Magic_s01:
@@ -2148,7 +2150,7 @@ class CR4CharacterMenu extends CR4MenuBase
 		dm.GetAbilityAttributeValue('alchemy_potionduration', 'potion_duration', min, max);
 		ability =  GetAttributeRandomizedValue(min, max);
 		arg_duration = CalculateAttributeValue(ability);
-				
+		
 		switch (targetSkill.skillType)
 		{
 			case S_Alchemy_s01:
@@ -2269,7 +2271,7 @@ class CR4CharacterMenu extends CR4MenuBase
 		var argsString	: array<string>;
 		var arg			: float;
 		var ability		: SAbilityAttributeValue;
-		
+
 		switch (targetSkill.skillType)
 		{
 			case S_Perk_01:
@@ -2286,7 +2288,7 @@ class CR4CharacterMenu extends CR4MenuBase
 				break;
 			case S_Perk_04:
 				ability = GetWitcherPlayer().GetSkillAttributeValue(S_Perk_04, 'vitality', false, true);
-				argsInt.PushBack(RoundMath(ability.valueBase));
+				argsInt.PushBack(RoundMath(ability.valueMultiplicative*100)); 
 				baseString = GetLocStringByKeyExtWithParams(locKey, argsInt);
 				break;
 			case S_Perk_05:

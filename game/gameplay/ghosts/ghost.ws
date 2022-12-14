@@ -33,6 +33,11 @@ class CGhost extends CNewNPC
 				drawableComponent.SetCastingShadows ( false );
 			}
 		}
+
+		if( FactsQuerySum( "q106_magic_oillamp_used" ) > 0  )
+		{
+			theGame.HapticStart( "haptic_lamp_discovery" );
+		}
 	}
 	
 	event OnFireHit(source : CGameplayEntity)

@@ -250,7 +250,10 @@ class W3BoltProjectile extends W3ArrowProjectile
 		var additionalProjectile : W3BoltProjectile;
 		
 		if(GetOwner() == thePlayer)
-			theGame.VibrateControllerHard();	
+		{
+			if( theGame.GetPlatform() != Platform_PS5 ) 
+				theGame.VibrateControllerHard();	
+		}
 		
 		inv = GetOwner().GetInventory();
 		projectiles.Clear();
@@ -334,10 +337,19 @@ class W3BoltProjectile extends W3ArrowProjectile
 		var boneIndex				: int;
 		var npc						: CNewNPC;
 
-		if ( thePlayer.IsSwimming() )
-			attackRange = theGame.params.MAX_THROW_RANGE;
-		else
+		
+		
+		
+		if ( thePlayer.IsDiving() )
+		{
 			attackRange = theGame.params.UNDERWATER_THROW_RANGE;
+			projSpeed = projSpeed * 0.6;
+		}
+		else
+		{
+			attackRange = theGame.params.MAX_THROW_RANGE;
+		}
+		
 		
 		boneIndex = -1;
 		if ( thePlayer.IsCombatMusicEnabled() && thePlayer.GetDisplayTarget()  && thePlayer.playerAiming.GetCurrentStateName() == 'Waiting' )

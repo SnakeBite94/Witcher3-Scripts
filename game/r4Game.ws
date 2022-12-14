@@ -13,6 +13,7 @@ import struct SSavegameInfo
 	import var slotType : ESaveGameType;	
 	import var slotIndex : int;				
 											
+	import var comboStatus : ESaveComboStatus;	
 };
 
 
@@ -21,8 +22,17 @@ enum Platform
 	Platform_PC = 0,
 	Platform_Xbox1 = 1,
 	Platform_PS4 = 2,
-	Platform_Unknown = 3
+	Platform_PS5 = 3,
+	Platform_Xbox_SCARLETT_ANACONDA = 4,
+	Platform_Xbox_SCARLETT_LOCKHART = 5,
+	Platform_Unknown = 255
 }
+
+enum PhysicalDriveType
+{
+	DT_HDD = 0,
+	DT_SSD
+}	
 
 struct SPostponedPreAttackEvent
 {
@@ -76,6 +86,9 @@ import class CR4Game extends CCommonGame
 	
 	import final function GetFocusModeController() : CFocusModeController;
 	
+	import final function SetTriggerEffect( t : int, mode : int, param : array<Vector> );
+	import final function ClearTriggerEffect( t : int );
+	import final function HapticStart( t : string );
 	public var isRespawningInLastCheckpoint : bool;
 	default isRespawningInLastCheckpoint = false;
 	private var environmentID : int;
@@ -105,7 +118,6 @@ import class CR4Game extends CCommonGame
 	
 	event  OnGameLoadInitFinished()
 	{
-		var requiredContent : array< name >;
 		var blockedContentTag : name;
 		var i : int;
 		var progress : float;
@@ -132,19 +144,9 @@ import class CR4Game extends CCommonGame
 		
 		if ( loadResult == LOAD_MissingContent )
 		{
-			GetContentRequiredByLastSave( requiredContent );
-			
 			theSound.SoundEvent("gui_global_denied");
 			
-			for ( i = ( requiredContent.Size() - 1 ); i >= 0; i -= 1 )
-			{
-				if ( !IsContentAvailable( requiredContent[ i ] ) )
-				{
-					blockedContentTag = requiredContent[ i ];
-					break;
-				}
-			}
-			
+			blockedContentTag = 'RequiredForSave';
 			progress = ProgressToContentAvailable( blockedContentTag );
 			GetGuiManager().ShowProgressDialog( UMID_MissingContentOnLoadError, "", "error_message_new_game_not_ready", true, UDB_Ok, progress, UMPT_Content, blockedContentTag );
 			isRespawningInLastCheckpoint = false;
@@ -287,6 +289,10 @@ import class CR4Game extends CCommonGame
 	
 	
 	import final function DisplaySystemHelp();
+	import final function DisplayStore();
+	import final function IsExpansionPackMenuSupported() : bool;
+	import final function DisplayStoreExpansionPack( dlcName : name );
+	import final function TryDownloadExpansionPack( dlcName : name );
 	import final function DisplayUserProfileSystemDialog();
 	import final function SetRichPresence( presence : name );
 
@@ -295,6 +301,14 @@ import class CR4Game extends CCommonGame
 	
 	
 	import final function SaveUserSettings();
+	
+	import final function GetPhotomodeEffects() : CR4PhotomodeEffects;
+	import final function GetPhotomodeCamera() : CCustomCamera;
+	import final function TakeScreenshot();
+	
+	import final function GetDriveType() : int;
+	
+	import final function PauseGameplayFx( enable : bool );
 	
 	public final function UpdateRichPresence(presence : name)
 	{
@@ -481,6 +495,8 @@ import class CR4Game extends CCommonGame
 	
 	
 	import final function GetPlatform():int;
+	import final function GetGalaxyPf():int;
+	import final function UsesRedLauncher():bool;
 	
 	private var isSignedIn:bool;
 	default isSignedIn = false;
@@ -497,6 +513,23 @@ import class CR4Game extends CCommonGame
 		}
 	}
 	
+	event OnCloudSavesReady()
+	{
+		var menuBase 	: CR4MenuBase;
+		var ingameMenu 	: CR4IngameMenu;
+		
+		menuBase = (CR4MenuBase)(theGame.GetGuiManager().GetRootMenu());
+		if (menuBase)
+		{
+			ingameMenu = (CR4IngameMenu)(menuBase.GetSubMenu());
+			
+			if (ingameMenu)
+			{
+				ingameMenu.CheckSaveAvailability();
+			}
+		}
+	}
+
 	event OnUserSignedIn()
 	{
 		isSignedIn = true;
@@ -521,9 +554,16 @@ import class CR4Game extends CCommonGame
 		GetGuiManager().OnSignInCancelled();
 	}
 	
+	import final function IsGalaxyUserSignedIn():bool;
+	import final function HasInternetConnection():bool;
+	
 	import final function SetActiveUserPromiscuous();
 	
 	import final function ChangeActiveUser();
+	
+	import final function DebugFirstLaunch();
+	
+	import final function DebugForceCrash(crashType : string) : bool;
 	
 	import final function GetActiveUserDisplayName() : string;
 	
@@ -757,6 +797,11 @@ import class CR4Game extends CCommonGame
 			theGame.GetTutorialSystem().DisplayTutorial(tut);
 		}
 	}
+
+	event  OnRefreshActiveUserDisplayName()
+	{
+		GetGuiManager().OnRefreshActiveUserDisplayName();
+	}
 	
 	event  OnSaveStarted( type : ESaveGameType )
 	{
@@ -773,20 +818,22 @@ import class CR4Game extends CCommonGame
 		
 		if ( succeeded )
 		{
-			theGame.GetGuiManager().ShowSavingIndicator();
-			theGame.GetGuiManager().HideSavingIndicator();
-		
-			if (theGame.GetPlatform() == Platform_Xbox1)
+			GetGuiManager().ShowSavingIndicator();
+			GetGuiManager().HideSavingIndicator();
+			
+			switch( GetPlatform() )
 			{
-				text = "panel_hud_message_gamesaved_X1";
-			}
-			else if (theGame.GetPlatform() == Platform_PS4)
-			{
-				text = "panel_hud_message_gamesaved_PS4";
-			}
-			else
-			{
-				text = "panel_hud_message_gamesaved";
+				case Platform_PS5:	
+				case Platform_PS4:
+					text = "panel_hud_message_gamesaved_PS4";
+					break;
+				case Platform_Xbox1:
+				case Platform_Xbox_SCARLETT_ANACONDA:
+				case Platform_Xbox_SCARLETT_LOCKHART:
+					text = "panel_hud_message_gamesaved_X1";
+					break;
+				default:
+					text = "panel_hud_message_gamesaved";
 			}
 			
 			if ( type == SGT_AutoSave || type == SGT_CheckPoint || type == SGT_ForcedCheckPoint )
@@ -804,17 +851,19 @@ import class CR4Game extends CCommonGame
 		}
 		else if ( type == SGT_QuickSave || type == SGT_Manual )
 		{
-			if (theGame.GetPlatform() == Platform_Xbox1)
+			switch( GetPlatform() )
 			{
-				text = "panel_hud_message_gamesavedfailed_X1";	
-			}
-			else if (theGame.GetPlatform() == Platform_PS4)
-			{
-				text = "panel_hud_message_gamesavedfailed_PS4";
-			}
-			else
-			{
-				text = "panel_hud_message_gamesavedfailed";
+				case Platform_PS5:	
+				case Platform_PS4:
+					text = "panel_hud_message_gamesavedfailed_PS4";
+					break;
+				case Platform_Xbox1:
+				case Platform_Xbox_SCARLETT_ANACONDA:
+				case Platform_Xbox_SCARLETT_LOCKHART:
+					text = "panel_hud_message_gamesavedfailed_X1";
+					break;
+				default:
+					text = "panel_hud_message_gamesavedfailed";
 			}
 			
 			theGame.GetGuiManager().ShowUserDialog(0, "", text, UDB_Ok);
@@ -1214,19 +1263,23 @@ import class CR4Game extends CCommonGame
 	
 	 public function PopulateMenuQueueStartupAlways( out menus : array< name > )
 	{
+		var menuType : int;
+		
+		menuType = ChooseRandomMainMenuIfNotChosenYet();
 		if (GetPlatform() != Platform_PC)
 		{
-			if ( theGame.GetDLCManager().IsEP2Available() )
+			switch ( menuType )
 			{
-				menus.PushBack( 'StartScreenMenuEP2' );
-			}
-			else if ( theGame.GetDLCManager().IsEP1Available() )
-			{
-				menus.PushBack( 'StartScreenMenuEP1' );
-			}
-			else
-			{
-				menus.PushBack( 'StartScreenMenu' );
+				case 1:
+					menus.PushBack( 'StartScreenMenuEP1' );
+					break;
+				case 2:
+					menus.PushBack( 'StartScreenMenuEP2' );
+					break;
+				case 0:
+				default:
+					menus.PushBack( 'StartScreenMenu' );
+					break;
 			}
 		}
 	}
@@ -1254,18 +1307,60 @@ import class CR4Game extends CCommonGame
 	
 	 public function PopulateMenuQueueMainAlways( out menus : array< name > )
 	{
+		var menuType : int;
+		
+		menuType = ChooseRandomMainMenuIfNotChosenYet();
+		switch ( menuType )
+		{
+			case 1:
+				menus.PushBack( 'CommonMainMenuEP1' );
+				break;
+			case 2:
+				menus.PushBack( 'CommonMainMenuEP2' );
+				break;
+			case 0:
+			default:
+				menus.PushBack( 'CommonMainMenu' );
+				break;
+		}
+	}
+
+	private var _mainMenuType : int; default _mainMenuType = -1;
+
+	public function GetChosenMainMenuType() : int
+	{
+		return _mainMenuType;
+	}
+	
+	private function ChooseRandomMainMenuIfNotChosenYet() : int
+	{
+		var availableMainMenuTypes : array< int >;
+		var seed : int;
+		var index : int;
+		
+		if ( _mainMenuType > -1 )
+		{
+			return _mainMenuType;
+		}
+		
+		availableMainMenuTypes.PushBack( 0 );
+		
+		if (theGame.GetDLCManager().IsEP1Available())
+		{
+			availableMainMenuTypes.PushBack( 1 );
+		}
 		if (theGame.GetDLCManager().IsEP2Available())
 		{
-			menus.PushBack( 'CommonMainMenuEP2' );
+			availableMainMenuTypes.PushBack( 2 );
 		}
-		else if (theGame.GetDLCManager().IsEP1Available())
-		{
-			menus.PushBack( 'CommonMainMenuEP1' );
-		}
-		else
-		{
-			menus.PushBack( 'CommonMainMenu' );
-		}
+
+		seed = CalcSeed( theGame );
+		index = (int)RandNoiseF( seed, availableMainMenuTypes.Size() );
+
+		_mainMenuType = availableMainMenuTypes[ index ];
+		LogChannel('asd', "RAND " + seed + "   " + index + "   " + _mainMenuType );
+
+		return _mainMenuType;
 	}
 
 	public function GetNewGameDefinitionFilename() : string
@@ -1454,6 +1549,9 @@ import class CR4Game extends CCommonGame
 		{
 			
 			thePlayer.GetHorseWithInventory().SignalGameplayEventParamObject( 'HorseSummon', thePlayer );
+			
+			
+			((W3HorseComponent)thePlayer.GetHorseWithInventory().GetHorseComponent()).NGELookatPlayer();
 		}
 		
 		thePlayer.OnSpawnHorse();
@@ -2397,6 +2495,8 @@ import class CR4Game extends CCommonGame
 			}
 		}
 	}
+	
+	import final function WritePGO(optional counter : int);
 }
 
 function hasSaveDataToLoad():bool

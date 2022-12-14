@@ -33,6 +33,11 @@ class CBTTaskTaunt extends CBTTaskPlayAnimationEventDecorator
 				return false;
 		}
 		
+		
+		if ( GetActor().HasTag('mq1060_pv_boss') )
+			return false;
+		
+		
 		return true;
 	}
 

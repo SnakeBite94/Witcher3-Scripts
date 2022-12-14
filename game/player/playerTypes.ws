@@ -190,7 +190,9 @@ enum EItemSetBonus
 	EISB_Wolf_2,			
 	EISB_RedWolf_1,			
 	EISB_RedWolf_2,			
-	EISB_Vampire			
+	EISB_Vampire,			
+	EISB_Netflix_1,
+	EISB_Netflix_2
 }
 
 enum EItemSetType
@@ -202,7 +204,8 @@ enum EItemSetType
 	EIST_Wolf,
 	EIST_RedWolf,
 	EIST_Vampire,
-	EIST_Viper
+	EIST_Viper,
+	EIST_Netflix
 }
 
 function SetItemNameToType( nam : name ) : EItemSetType
@@ -216,6 +219,7 @@ function SetItemNameToType( nam : name ) : EItemSetType
 		case theGame.params.ITEM_SET_TAG_RED_WOLF : 		return EIST_RedWolf ;
 		case theGame.params.ITEM_SET_TAG_VAMPIRE :			return EIST_Vampire ;
 		case theGame.params.ITEM_SET_TAG_VIPER : 			return EIST_Viper;
+		case theGame.params.ITEM_SET_TAG_NETFLIX : 			return EIST_Netflix;
 		default: 											return EIST_Undefined;
 	}
 }
@@ -229,6 +233,7 @@ function GetSetBonusAbility( setBonus : EItemSetBonus ) : name
 		case EISB_Bear_2:				return 'setBonusAbilityBear_2';
 		case EISB_RedWolf_2:			return 'setBonusAbilityRedWolf_2';
 		case EISB_Wolf_1:				return 'SetBonusAbilityWolf_1';
+		case EISB_Netflix_1:			return 'SetBonusAbilityNetflix_1';
 		default: 						return '';
 	}
 }

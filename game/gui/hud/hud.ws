@@ -120,9 +120,8 @@ class CR4ScriptedHud extends CR4Hud
 		
 		GetHudEventController().RunDelayedEvents();
 		
-		
 		curUsedDeviceName = theInput.GetLastUsedGamepadType();
-		if( ( curUsedDeviceName == IDT_Steam || m_lastUsedDeviceName == IDT_Steam ) && curUsedDeviceName != m_lastUsedDeviceName )
+		if( curUsedDeviceName != m_lastUsedDeviceName )
 		{
 			m_lastUsedDeviceName = curUsedDeviceName;
 			UpdateInputDeviceType();
@@ -383,7 +382,7 @@ class CR4ScriptedHud extends CR4Hud
 		hudModulesNames.PushBack('DamagedItemsModule');
 		hudModulesNames.PushBack('TimeLapseModule');
 		hudModulesNames.PushBack('TimeLeftModule');
-		
+
 		for( i = 0; i < hudModulesNames.Size(); i += 1 )
 		{
 			CreateHudModule(NameToString(hudModulesNames[i]));
@@ -396,7 +395,9 @@ class CR4ScriptedHud extends CR4Hud
 		
 		UpdateInputDeviceType();
 		
-		CheckDLCMessagePending();
+		
+		
+		
 		setGameLanguage();
 		ToogleMinimalBuffView(true);
 	}
@@ -547,6 +548,11 @@ class CR4ScriptedHud extends CR4Hud
 	
 	public function UpdateHudConfigs():void
 	{
+		
+		var minimapModule : CR4HudModuleMinimap2;
+		var objectiveModule : CR4HudModuleQuests;
+		
+
 		UpdateHudConfig('Subtitles', false);
 		
 		
@@ -567,12 +573,36 @@ class CR4ScriptedHud extends CR4Hud
 		UpdateHudConfig('HorseStaminaBarModule', false);
 		UpdateHudConfig('ItemInfoModule', false);
 		
-		UpdateHudConfig('Minimap2Module', false);
+		
+		
+		minimapModule = (CR4HudModuleMinimap2)GetHudModule("Minimap2Module");
+		if(minimapModule)
+		{
+			if(!minimapModule.GetMinimapDuringFocusCombat())
+			{
+				UpdateHudConfig('Minimap2Module', false);
+			}
+		}	
+		
+		
 		UpdateHudConfig('DayWeatherIndicator',false);
 		UpdateHudConfig('TrackedMonster',false);
 		UpdateHudConfig('OnelinersModule', false);
 		UpdateHudConfig('OxygenBarModule', false);
-		UpdateHudConfig('QuestsModule', false);
+		
+		
+		
+		
+		objectiveModule = (CR4HudModuleQuests)GetHudModule("QuestsModule");
+		if(objectiveModule)
+		{
+			if(!objectiveModule.GetObjectiveDuringFocusCombat())
+			{
+				UpdateHudConfig('QuestsModule', false);
+			}
+		}	
+		
+		
 		UpdateHudConfig('WolfMedalion',false);
 		UpdateHudConfig('MessageModule', false);
 		UpdateHudConfig('MinimapRotation', false);
@@ -582,7 +612,7 @@ class CR4ScriptedHud extends CR4Hud
 		UpdateHudConfig('MinimapPoiCompletedIcons', false);
 		UpdateHudConfig('ControlsFeedbackModule', false);		
 		UpdateHudConfig('TimeLeftModule', false);
-		
+
 		UpdateHUD();
 	}
 	
@@ -1547,6 +1577,21 @@ class CR4ScriptedHud extends CR4Hud
 	
 	public function OnCutsceneStarted()
 	{
+		
+		var qst : CR4HudModuleQuests;		
+		var mm : CR4HudModuleMinimap2;
+
+		mm = (CR4HudModuleMinimap2)GetHudModule("Minimap2Module");
+		qst = (CR4HudModuleQuests)GetHudModule("QuestsModule");
+		
+		if(mm)
+			mm.SetIsInDlg(true);
+			
+		if(qst)
+			qst.SetIsInDlg(true);				
+		
+	
+	
 		ForceShow( true, HVS_Scene );
 		
 		m_fxOnCutscene.InvokeSelfOneArg( FlashArgBool( true ) );
@@ -1554,6 +1599,20 @@ class CR4ScriptedHud extends CR4Hud
 	
 	public function OnCutsceneEnded()
 	{
+		
+		var qst : CR4HudModuleQuests;		
+		var mm : CR4HudModuleMinimap2;
+
+		mm = (CR4HudModuleMinimap2)GetHudModule("Minimap2Module");
+		qst = (CR4HudModuleQuests)GetHudModule("QuestsModule");
+		
+		if(mm)
+			mm.SetIsInDlg(false);
+			
+		if(qst)
+			qst.SetIsInDlg(false);				
+		
+	
 		ForceShow( false, HVS_Scene );
 		
 		m_fxOnCutscene.InvokeSelfOneArg( FlashArgBool( false ) );

@@ -749,7 +749,8 @@ class W3PlayerAbilityManager extends W3AbilityManager
 			if( skillLevel > 0 )
 			{
 				color = owner.GetInventory().GetSkillMutagenColor( mutagenItemID );
-				current.count = skillLevel * GetSkillGroupColorCount(color, skillGroupID);
+				
+				current.count = skillLevel * ( GetSkillGroupColorCount(color, skillGroupID) + 1 ); 
 			}
 		}
 		
@@ -1115,6 +1116,11 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		var attributeName : name;
 		var skill : ESkill;
 		var blizzard : W3Potion_Blizzard;
+		
+		
+		var deny : bool;
+		var toxicityThreshold : float;
+		
 	
 		super.GetStaminaActionCostInternal(action, isPerSec, cost, delay, abilityName);
 		
@@ -1138,8 +1144,21 @@ class W3PlayerAbilityManager extends W3AbilityManager
 			cost.valueMultiplicative = 0;
 		}
 		
+
 		
-		if( thePlayer.HasBuff( EET_Blizzard ) && owner == GetWitcherPlayer() && GetWitcherPlayer().GetPotionBuffLevel( EET_Blizzard ) == 3 && thePlayer.HasBuff( EET_BattleTrance ) )
+		if ( CanUseSkill( S_Alchemy_s03 ) )
+		{
+			toxicityThreshold = thePlayer.GetStatMax(BCS_Toxicity) * (1 - CalculateAttributeValue( thePlayer.GetSkillAttributeValue(S_Alchemy_s03, 'toxicity_threshold', false, true) ) * thePlayer.GetSkillLevel(S_Alchemy_s03));
+			if ( thePlayer.GetStat(BCS_Toxicity, true) > toxicityThreshold && GetWitcherPlayer().IsMutationActive( EPMT_Mutation7 ) )
+			{
+				deny = true;
+			}
+		}
+		
+		
+		
+		if( !deny && thePlayer.HasBuff( EET_Blizzard ) && owner == GetWitcherPlayer() && GetWitcherPlayer().GetPotionBuffLevel( EET_Blizzard ) == 3 && GetWitcherPlayer().GetStat( BCS_Focus ) >= 3 && thePlayer.HasBuff( EET_BattleTrance ) )
+		
 		{
 			blizzard = ( W3Potion_Blizzard )thePlayer.GetBuff( EET_Blizzard );
 			if( blizzard.IsSlowMoActive() )
@@ -1543,6 +1562,7 @@ class W3PlayerAbilityManager extends W3AbilityManager
 	public final function AddSkill(skill : ESkill, isTemporary : bool)
 	{
 		var i : int;
+		var doneSkl, countInTree  : int;
 		var learnedAll, ret : bool;
 		var tree : ESkillPath;
 		var uiStateCharDev : W3TutorialManagerUIHandlerStateCharacterDevelopment;
@@ -1554,21 +1574,36 @@ class W3PlayerAbilityManager extends W3AbilityManager
 			return;
 			
 		
+		doneSkl = 0;
+		countInTree = 0;
 		if( !isTemporary )
 		{
 			learnedAll = true;
 			tree = GetSkillPathType(skill);
 			for(i=0; i<skills.Size(); i+=1)
 			{
-				if( skills[i].skillPath == tree && ( skills[i].level == 0 || skills[i].isTemporary ) )
+				if( skills[i].skillPath == tree)
 				{
-					learnedAll = false;
-					break;
+					countInTree+=1;
+					if (skills[i].level == 0 || skills[i].isTemporary )
+					{
+						learnedAll = false;
+					}
+					else
+					{
+						doneSkl+=1;
+					}
 				}
 			}
 			
-			if(learnedAll)
+			if(learnedAll) 
+			{
 				theGame.GetGamerProfile().AddAchievement(EA_Dendrology);
+			}
+			else
+			{
+				theGame.GetGamerProfile().NoticeAchievementProgress(EA_Dendrology, doneSkl, countInTree);
+			}
 		}
 		
 		
@@ -2559,6 +2594,10 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		var guiMan : CR4GuiManager;
 		var hud : CR4ScriptedHud;
 		
+		var id : SItemUniqueId; 
+		
+		witcher = GetWitcherPlayer();	
+		
 		
 		if(IsCoreSkill(skill))
 			return;
@@ -2624,6 +2663,17 @@ class W3PlayerAbilityManager extends W3AbilityManager
 			{
 				hud.OnRelevantSkillChanged( skill, false );
 			}
+			
+			
+			if( witcher.GetItemEquippedOnSlot( EES_SteelSword, id ) )
+			{
+				witcher.RemoveExtraOilsFromItem( id );
+			}
+			if( witcher.GetItemEquippedOnSlot( EES_SilverSword, id ) )
+			{
+				witcher.RemoveExtraOilsFromItem( id );
+			}
+			
 		}
 		else if(skill == S_Alchemy_s20)
 		{
@@ -2853,6 +2903,8 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		var m_alchemyManager : W3AlchemyManager;
 		var ignorePain : W3Effect_IgnorePain;
 		
+		var hud : CR4ScriptedHud;
+		
 		
 		if(IsCoreSkill(skill))
 			return;
@@ -2861,6 +2913,15 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		{
 			if(currLevel < prevLevel)
 				thePlayer.SkillReduceBombAmmoBonus();
+		}
+		
+		else if(skill == S_Alchemy_s06)
+		{
+			hud = (CR4ScriptedHud)theGame.GetHud();
+			if ( hud )
+			{
+				hud.OnRelevantSkillChanged( skill, true );
+			}
 		}
 		else if(skill == S_Alchemy_s18)
 		{
@@ -3054,6 +3115,217 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		owner.RemoveAbilityAll('magic_staminaregen');
 		owner.RemoveAbilityAll('alchemy_potionduration');
 	}
+	
+	
+	public function NGEFixSkillPoints()
+	{
+		var i, j : int;
+		var skillType : ESkill;
+		var equippedSkills : array<STempSkill>;
+		var tempSkill : STempSkill;
+		var skillPointsToAdd : int;
+		var skillDefs : array<name>;
+		var canContinue : bool;
+		
+		var used, free : int;
+		
+		used = GetWitcherPlayer().levelManager.GetPointsUsed(ESkillPoint);
+		free = GetWitcherPlayer().levelManager.GetPointsFree(ESkillPoint);	
+
+		skillPointsToAdd += free;
+
+		for(i=0; i<skills.Size(); i+=1)
+		{			
+			skillType = skills[i].skillType;
+			
+			if(IsCoreSkill(skillType))
+				continue;
+				
+			if(skillType == S_SUndefined)
+				continue;
+			
+			
+			if(IsSkillEquipped(skillType))
+			{
+				tempSkill.skillType = skillType;				
+				tempSkill.skillSlot = GetSkillSlotID(skillType);
+				tempSkill.equipped = true;	
+				tempSkill.temporary = skills[i].isTemporary;
+					
+				if(skillType == S_Sword_s10)
+				{
+					if(skills[i].level >= 2)
+						tempSkill.skillLevel = 2;
+					else
+						tempSkill.skillLevel = 1;
+				}
+				else if(skillType == S_Sword_s09)
+				{
+					tempSkill.skillLevel = 1;
+				}
+				else if(skillType == S_Sword_s13)
+				{
+					tempSkill.skillLevel = 1;
+				}
+				else if(skillType == S_Alchemy_s09)
+				{			
+					tempSkill.skillLevel = 1;
+				}				
+				else if(skills[i].level >= 3)
+					tempSkill.skillLevel = 3;
+				else
+					tempSkill.skillLevel = skills[i].level;
+				
+				equippedSkills.PushBack(tempSkill);
+				
+				
+				UnequipSkill(GetSkillSlotID(skillType));
+			}
+			else if(HasLearnedSkill(skillType))
+			{
+				tempSkill.skillType = skillType;				
+				tempSkill.skillSlot = GetSkillSlotID(skillType);
+				tempSkill.equipped = false;		
+				tempSkill.temporary = skills[i].isTemporary;
+					
+				if(skillType == S_Sword_s10)
+				{
+					if(skills[i].level >= 2)
+						tempSkill.skillLevel = 2;
+					else
+						tempSkill.skillLevel = 1;
+				}
+				else if(skillType == S_Sword_s09)
+				{
+					tempSkill.skillLevel = 1;
+				}
+				else if(skillType == S_Sword_s13)
+				{
+					tempSkill.skillLevel = 1;
+				}
+				else if(skillType == S_Alchemy_s09)
+				{			
+					tempSkill.skillLevel = 1;
+				}				
+				else if(skills[i].level >= 3)
+					tempSkill.skillLevel = 3;
+				else
+					tempSkill.skillLevel = skills[i].level;
+								
+				equippedSkills.PushBack(tempSkill);
+			}
+
+			if(skillType == S_Sword_s10) 
+			{
+				if(skills[i].level == 3)
+				{
+					skillPointsToAdd += 1;
+					skills[i].level = 2;	
+				}
+			}
+			else if(skillType == S_Sword_s09) 
+			{
+				if(skills[i].level == 5)
+				{
+					skillPointsToAdd += 4;
+					skills[i].level = 1;		
+				}
+				else if(skills[i].level == 4)
+				{
+					skillPointsToAdd += 3;
+					skills[i].level = 1;		
+				}
+				else if(skills[i].level == 3)
+				{
+					skillPointsToAdd += 2;
+					skills[i].level = 1;	
+				}
+				else if(skills[i].level == 2)
+				{
+					skillPointsToAdd += 1;
+					skills[i].level = 1;	
+				}
+			}
+			else if(skillType == S_Sword_s13) 
+			{
+				if(skills[i].level == 3)
+				{
+					skillPointsToAdd += 2;
+					skills[i].level = 1;	
+				}
+				else if(skills[i].level == 2)
+				{
+					skillPointsToAdd += 1;
+					skills[i].level = 1;	
+				}
+			}
+			else if(skillType == S_Alchemy_s09) 
+			{
+				if(skills[i].level == 3)
+				{
+					skillPointsToAdd += 2;
+					skills[i].level = 1;	
+				}
+				else if(skills[i].level == 2)
+				{
+					skillPointsToAdd += 1;
+					skills[i].level = 1;	
+				}				
+			}
+			else if(skills[i].level == 5)
+			{
+				skills[i].level = 3;
+				skillPointsToAdd += 2;
+			}
+			else if(skills[i].level == 4)
+			{
+				skills[i].level = 3;
+				skillPointsToAdd += 1;
+			}
+		}
+		
+		
+		for(i=0; i<pathPointsSpent.Size(); i+=1)
+		{
+			pathPointsSpent[i] = 0;
+		}
+
+		
+		owner.RemoveAbilityAll('sword_adrenalinegain');
+		owner.RemoveAbilityAll('magic_staminaregen');
+		owner.RemoveAbilityAll('alchemy_potionduration');
+		
+		
+		
+		charStats.GetAbilitiesWithTag('SkillDefinitionName', skillDefs);
+		for(i=0; i<skillDefs.Size(); i+=1)
+			CacheSkills(skillDefs[i], skills);
+		InitSkills();	
+		PrecacheModifierSkills();	
+		
+		
+		for(i=0; i<equippedSkills.Size(); i+=1)
+		{
+			skillType = equippedSkills[i].skillType;
+			if(skillType == S_SUndefined)
+				continue;
+			
+			for(j=0; j<equippedSkills[i].skillLevel;j+=1)
+			{
+				AddSkill(skillType,equippedSkills[i].temporary);				
+			}			
+			
+			if(equippedSkills[i].equipped)
+				EquipSkill(skillType, equippedSkills[i].skillSlot);
+		}
+
+		
+		GetWitcherPlayer().AddPoints(ESkillPoint, skillPointsToAdd, true);
+		
+		GetWitcherPlayer().levelManager.NGE_SetUsedPoints( used - Abs(skillPointsToAdd - free) );
+		GetWitcherPlayer().levelManager.NGE_SetFreePoints( skillPointsToAdd );
+	}	
+	
 	
 	
 	
@@ -4244,6 +4516,17 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		}
 	}	
 }
+
+
+struct STempSkill
+{
+	var skillType : ESkill;
+	var skillLevel : int;
+	var skillSlot : int;
+	var equipped : bool;
+	var temporary : bool;
+}
+
 
 exec function dbgskillslots()
 {

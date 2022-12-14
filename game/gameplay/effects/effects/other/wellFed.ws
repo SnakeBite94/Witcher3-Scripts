@@ -45,10 +45,11 @@ class W3Effect_WellFed extends W3RegenEffect
 				min = GetWitcherPlayer().GetSkillAttributeValue( S_Perk_15, 'duration', false, false );
 				duration = min.valueAdditive;
 			}
+
 			if( GetWitcherPlayer().HasRunewordActive( 'Runeword 6 _Stats' ) )
 			{
 				theGame.GetDefinitionsManager().GetAbilityAttributeValue('Runeword 6 _Stats', 'runeword6_duration_bonus', min, max);
-				duration *= 1 + min.valueMultiplicative;
+				duration *= ( 1 + min.valueMultiplicative );
 			}
 		}
 	}
@@ -72,4 +73,20 @@ class W3Effect_WellFed extends W3RegenEffect
 		else
 			return EI_Deny;
 	}
+	
+	
+	protected function SetEffectValue()
+	{
+		var min, max : SAbilityAttributeValue;
+		
+		super.SetEffectValue();
+		
+		if( GetWitcherPlayer().HasRunewordActive( 'Runeword 6 _Stats' ) )
+		{
+			theGame.GetDefinitionsManager().GetAbilityAttributeValue('Runeword 6 _Stats', 'runeword6_duration_bonus', min, max);
+			effectValue.valueAdditive *= ( 1 + min.valueMultiplicative );
+		}
+		
+	}
+	
 }

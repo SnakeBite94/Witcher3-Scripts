@@ -58,6 +58,9 @@ class IngameMenuStructureCreator
 		var l_DataFlashObject 		: CScriptedFlashObject;
 		var l_subDataFlashObject	: CScriptedFlashObject;
 		var l_titleString			: string;
+		var b_GogWithSubMenus       : bool;
+		
+		b_GogWithSubMenus = false;
 		
 		l_DataFlashArray = m_flashValueStorage.CreateTempFlashArray();
 		
@@ -72,17 +75,9 @@ class IngameMenuStructureCreator
 			}
 			
 			
-			if ( ( theGame.CanStartStandaloneDLC('ep1') && theGame.GetDLCManager().IsEP1Available() ) ||
-				(  theGame.CanStartStandaloneDLC('bob_000_000') && theGame.GetDLCManager().IsEP2Available() ) ||
-				   theGame.GetDLCManager().IsNewGamePlusAvailable() )
 			{
 				l_DataFlashObject = CreateMenuItem("NewGame", "panel_newgame", NameToFlashUInt('NewGame'), IGMActionType_MenuHolder, false, "panel_newgame");
 				l_ChildMenuFlashArray = CreateNewGameListArray();
-			}
-			else
-			{
-				l_DataFlashObject = CreateMenuItem("NewGame", "panel_newgame", NameToFlashUInt('NewGame'), IGMActionType_MenuHolder, false, "newgame_difficulty");
-				l_ChildMenuFlashArray = CreateDifficultyListArray(0);
 			}
 			l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 			l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
@@ -99,17 +94,19 @@ class IngameMenuStructureCreator
 		if (!parentMenu.isMainMenu)
 		{
 			
-			if (theGame.GetPlatform() == Platform_Xbox1)
+			switch( theGame.GetPlatform() )
 			{
-				l_titleString = "panel_mainmenu_savegame_x1";
-			}
-			else if (theGame.GetPlatform() == Platform_PS4)
-			{
-				l_titleString = "panel_mainmenu_savegame_ps4";
-			}
-			else
-			{
-				l_titleString = "panel_mainmenu_savegame";
+				case Platform_PS5:	
+				case Platform_PS4:
+					l_titleString = "panel_mainmenu_savegame_ps4";
+					break;
+				case Platform_Xbox1:
+				case Platform_Xbox_SCARLETT_ANACONDA:
+				case Platform_Xbox_SCARLETT_LOCKHART:
+					l_titleString = "panel_mainmenu_savegame_x1";
+					break;
+				default:
+					l_titleString = "panel_mainmenu_savegame";
 			}	
 			
 			l_DataFlashObject = CreateMenuItem("mainmenu_savegame", l_titleString, NameToFlashUInt('SaveGame'), IGMActionType_Save, true);
@@ -130,9 +127,10 @@ class IngameMenuStructureCreator
 		l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
 		
 		
+		
 		if (!parentMenu.isMainMenu)
 		{
-			if( thePlayer.IsActionAllowed( EIAB_OpenGlossary ))
+			if( thePlayer.IsActionAllowed( EIAB_OpenGlossary ) && !theGame.IsDialogOrCutscenePlaying() ) 
 			{
 				
 				l_DataFlashObject = CreateMenuItem("mainmenu_Tutorials", "panel_mainmenu_tutorials", NameToFlashUInt('Tutorials'), IGMActionType_Tutorials, true);
@@ -141,7 +139,7 @@ class IngameMenuStructureCreator
 			}
 			
 			
-			if (theGame.GetGwintManager().GetHasDoneTutorial() || theGame.GetGwintManager().HasLootedCard())
+			if ( !theGame.IsDialogOrCutscenePlaying() && (theGame.GetGwintManager().GetHasDoneTutorial() || theGame.GetGwintManager().HasLootedCard()))  
 			{
 				l_DataFlashObject = CreateMenuItem("mainmenu_Gwent", "panel_mainmenu_gwent", NameToFlashUInt('Gwent'), IGMActionType_Gwint, true);
 				l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
@@ -151,11 +149,28 @@ class IngameMenuStructureCreator
 		}
 		
 		
-		if (theGame.GetPlatform() == Platform_Xbox1)
+		if (parentMenu.isMainMenu)
 		{
-			l_DataFlashObject = CreateMenuItem("mainmenu_help", "panel_mainmenu_help", NameToFlashUInt('Help'), IGMActionType_Help, true);
+			if (b_GogWithSubMenus)
+			{
+				l_DataFlashObject = CreateMenuItem("mainmenu_cloud", "ui_gog_my_rewards", NameToFlashUInt('CloudSaves'), IGMActionType_MenuHolder, false);
+				l_ChildMenuFlashArray = CreateCloudSavesSubElements();
+				l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
+			}
+			else
+			{
+				l_DataFlashObject = CreateMenuItem("mainmenu_cloud", "ui_gog_my_rewards", NameToFlashUInt('CloudSaves'), IGMActionType_Gog, true);
+			}
 			l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
 		}
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 		if (!parentMenu.isMainMenu)
@@ -165,11 +180,16 @@ class IngameMenuStructureCreator
 			l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
 			
 		}
-		else if (theGame.GetDLCManager().IsAnyDLCAvailable())
+
+		
+		
+		
+
+		if ( parentMenu.isMainMenu && theGame.IsExpansionPackMenuSupported() && (!theGame.GetDLCManager().IsEP1Enabled() || !theGame.GetDLCManager().IsEP2Enabled()) )
 		{
 			
-			l_DataFlashObject = CreateMenuItem("panel_dlc", "panel_dlc", NameToFlashUInt('QuitGame'), IGMActionType_MenuHolder, false);
-			l_ChildMenuFlashArray = CreateDLCSubElements();
+			l_DataFlashObject = CreateMenuItem("panel_expansion_packs", "panel_mainmenu_item_expansion_purchase", NameToFlashUInt('ExpansionPacks'), IGMActionType_MenuHolder, false, "panel_mainmenu_item_expansion_purchase");
+			l_ChildMenuFlashArray = CreateExpansionPacksSubElements();
 			l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 			l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
 			
@@ -182,7 +202,7 @@ class IngameMenuStructureCreator
 			l_DataFlashArray.PushBackFlashObject(l_DataFlashObject);
 			
 		}
-		
+	
 		if ( parentMenu.isMainMenu && theGame.IsDebugQuestMenuEnabled() && !theGame.IsFinalBuild() )
 		{
 			
@@ -212,39 +232,60 @@ class IngameMenuStructureCreator
 		
 		
 		
-		if (theGame.CanStartStandaloneDLC('ep1') && theGame.GetDLCManager().IsEP1Available())
+		
 		{
 			l_DataFlashObject = CreateMenuItem("NewGame", "new_game_ep1", NameToFlashUInt('NewGameEP1'), IGMActionType_MenuHolder, false, "newgame_difficulty");
 			l_ChildMenuFlashArray = CreateDifficultyListArray(IGMC_EP1_Save);
 			l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 			l_DataFlashObject.SetMemberFlashString( "description", GetLocStringByKeyExt("panel_mainmenu_start_ep1_description") );
+			l_DataFlashObject.SetMemberFlashBool( "unavailable", !( theGame.CanStartStandaloneDLC('ep1') && theGame.GetDLCManager().IsEP1Available() && theGame.IsContentAvailable('content12') ) );
 			
 			l_optionChildList.PushBackFlashObject(l_DataFlashObject);
 		}
 		
-		if (theGame.CanStartStandaloneDLC('bob_000_000') && theGame.GetDLCManager().IsEP2Available())
+		
 		{
 			l_DataFlashObject = CreateMenuItem("NewGame", "new_game_ep2", NameToFlashUInt('NewGameEP2'), IGMActionType_MenuHolder, false, "newgame_difficulty");
 			l_ChildMenuFlashArray = CreateDifficultyListArray(IGMC_EP2_Save);
 			l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 			l_DataFlashObject.SetMemberFlashString( "description", GetLocStringByKeyExt("panel_mainmenu_start_ep2_description") );
+			l_DataFlashObject.SetMemberFlashBool( "unavailable", !( theGame.CanStartStandaloneDLC('bob_000_000') && theGame.GetDLCManager().IsEP2Available() && theGame.IsContentAvailable('content12') ) );
 			
 			l_optionChildList.PushBackFlashObject(l_DataFlashObject);
 		}
 		
 		
-		if (theGame.GetDLCManager().IsNewGamePlusAvailable())
+		
 		{
 			l_DataFlashObject = CreateMenuItem("NewGame", "newgame_plus", NameToFlashUInt('NewGamePlus'), IGMActionType_MenuHolder, false, "newgame_difficulty");
 			l_ChildMenuFlashArray = CreateDifficultyListArray(IGMC_New_game_plus);
 			l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 			l_DataFlashObject.SetMemberFlashString( "description", GetLocStringByKeyExt("panel_mainmenu_start_ngplus_description") );
+			l_DataFlashObject.SetMemberFlashBool( "unavailable", !( theGame.GetDLCManager().IsNewGamePlusAvailable() ) );
+			
 			l_optionChildList.PushBackFlashObject(l_DataFlashObject);
 		}
+		
 		
 		return l_optionChildList;
 	}
 	
+	protected function CreateCloudSavesSubElements() : CScriptedFlashArray
+	{
+		var l_optionChildList 	: CScriptedFlashArray;
+		var l_DataFlashObject	: CScriptedFlashObject;
+		var l_ChildMenuFlashArray	: CScriptedFlashArray;
+		
+		l_optionChildList = m_flashValueStorage.CreateTempFlashArray();
+		l_DataFlashObject = CreateMenuItem("cloud_gog", "Sign in", NameToFlashUInt('CloudSteam'), IGMActionType_Gog, true);
+		l_optionChildList.PushBackFlashObject(l_DataFlashObject);
+		
+		
+		
+		
+		return l_optionChildList;
+	}
+			
 	protected function CreateDifficultyListArray(initialTag:int) : CScriptedFlashArray
 	{
 		var l_optionChildList : CScriptedFlashArray;
@@ -369,6 +410,7 @@ class IngameMenuStructureCreator
 		
 		l_ChildMenuFlashArray = m_flashValueStorage.CreateTempFlashArray();
 		currentTag = tag;
+
 		AddNewgameSimulateImportOption(currentTag, l_ChildMenuFlashArray);
 		l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 		
@@ -509,19 +551,43 @@ class IngameMenuStructureCreator
 		return savedGames;
 	}
 	
+	protected function CreateExpansionPacksSubElements() : CScriptedFlashArray
+	{
+		var l_optionChildList 		: CScriptedFlashArray;
+		var l_ChildMenuFlashArray	: CScriptedFlashArray;
+		var l_DataFlashObject 		: CScriptedFlashObject;
+		
+		l_optionChildList = m_flashValueStorage.CreateTempFlashArray();
+				
+		
+		{
+			l_DataFlashObject = CreateMenuItem("PurchaseEP1", "panel_mainmenu_item_purchase_ep1", NameToFlashUInt('PurchaseEP1'), IGMActionType_PurchaseEP1, false);
+			l_DataFlashObject.SetMemberFlashBool( "unavailable", theGame.GetDLCManager().IsEP1Enabled());	
+			l_optionChildList.PushBackFlashObject(l_DataFlashObject);
+		}
+		
+		{
+			l_DataFlashObject = CreateMenuItem("PurchaseEP2", "panel_mainmenu_item_purchase_bob", NameToFlashUInt('PurchaseEP2'), IGMActionType_PurchaseEP2, false);
+			l_DataFlashObject.SetMemberFlashBool( "unavailable", theGame.GetDLCManager().IsEP2Enabled() );
+			
+			l_optionChildList.PushBackFlashObject(l_DataFlashObject);
+		}
+		
+		
+		return l_optionChildList;
+	}
+
 	protected function CreateDLCSubElements() : CScriptedFlashArray
 	{
 		var l_optionChildList 	: CScriptedFlashArray;
 		var i				  	: int;
-		var dlcOptionIndex		: int;
+		var dlcOptionIndex		: array<int>;
 		var l_DataFlashObject	: CScriptedFlashObject;
 		var hasChildOptions		: bool;
 		var inGameConfigWrapper	: CInGameConfigWrapper;
 		var groupName			: name;
 		
 		hasChildOptions = false;
-		dlcOptionIndex = -1;
-		
 		inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
 		
 		l_optionChildList = m_flashValueStorage.CreateTempFlashArray();
@@ -532,22 +598,26 @@ class IngameMenuStructureCreator
 		for (i = 0; i < inGameConfigWrapper.GetGroupsNum(); i += 1)
 		{
 			groupName = inGameConfigWrapper.GetGroupName(i);
-			if (groupName == 'DLC')
-			{
-				dlcOptionIndex = i;
-				break;
+			if (groupName == 'DLC' || groupName == 'DLCOptions')
+			{			
+				dlcOptionIndex.PushBack(i);		
 			}
 		}
 		
-		if (dlcOptionIndex != -1)
+		if(dlcOptionIndex.Size()>0)
 		{
 			l_DataFlashObject = CreateMenuItem("dlc_options", "panel_mainmenu_options", NameToFlashUInt('DLCOptions'), IGMActionType_MenuLastHolder, true);
-			hasChildOptions = IngameMenu_FillSubMenuOptionsList(m_flashValueStorage, dlcOptionIndex, 'DLC', l_DataFlashObject);
+			for (i = 0; i < dlcOptionIndex.Size(); i += 1)
+			{
+				groupName = inGameConfigWrapper.GetGroupName(dlcOptionIndex[i]);
+				hasChildOptions = IngameMenu_FillSubMenuOptionsList(m_flashValueStorage, dlcOptionIndex[i], groupName, l_DataFlashObject);
+			}				
 			if (hasChildOptions)
 			{
 				l_optionChildList.PushBackFlashObject(l_DataFlashObject);
 			}
 		}
+		
 		
 		return l_optionChildList;
 	}

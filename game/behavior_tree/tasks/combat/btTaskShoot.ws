@@ -62,6 +62,8 @@ class CBTTaskShoot extends CBTTaskPlayAnimationEventDecorator
 	
 	function OnDeactivate()
 	{
+		((CPlayer) GetCombatTarget()).SetPlayerUnderAttack( false ); 
+	
 		super.OnDeactivate();
 	}
 	
@@ -185,6 +187,7 @@ class CBTTaskShoot extends CBTTaskPlayAnimationEventDecorator
 		
 		if ( projShot && dodgeable )
 		{
+			((CPlayer) GetCombatTarget()).SetPlayerUnderAttack( true ); 
 			
 			projectileFlightTime = distanceToTarget / arrow.projSpeed;
 			

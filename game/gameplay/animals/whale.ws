@@ -108,8 +108,8 @@ statemachine class W3WhaleArea extends CEntity
 	
 	default minSpawnDistance = 35.f;
 	default maxSpawnDistance = 60.f;
-	default spawnFrequencyMin = 15.f;
-	default spawnFrequencyMax = 25.f;
+	default spawnFrequencyMin = 35.f;
+	default spawnFrequencyMax = 55.f;
 	default whaleSpawnOffsetY = 120.f; 
 	default movementPatern = EWMP_awayFromPlayer;
 	

@@ -26,6 +26,9 @@ class CR4MapMenu extends CR4MenuBase
 	private var m_fxShowToussaint : CScriptedFlashFunction;
 	private var m_fxSetHighlightedMapPin : CScriptedFlashFunction;
 	
+	
+	private var m_fxSetInitialFilters : CScriptedFlashFunction;
+	
 	private var m_userPinNames : array< name >;
 
 	var currentTag			: name;
@@ -81,6 +84,9 @@ class CR4MapMenu extends CR4MenuBase
 		m_fxShowToussaint              = m_flashModule.GetMemberFlashFunction( "ShowToussaint" );
 		m_fxSetHighlightedMapPin       = m_flashModule.GetMemberFlashFunction( "SetHighlightedMapPin" );
 		
+		
+		m_fxSetInitialFilters       	= m_flashModule.GetMemberFlashFunction( "SetInitialFilters" );
+		
 		Initialize();
 		
 		UpdateActiveAreas();
@@ -105,7 +111,31 @@ class CR4MapMenu extends CR4MenuBase
 		
 		m_fxShowToussaint.InvokeSelfOneArg( FlashArgBool( theGame.GetDLCManager().IsEP2Available() ) );
 		UpdatePlayerLevel();
+		
+		
+		
+		if(!FactsDoesExist("nge_map_menu_filter"))
+		{
+			FactsSet("nge_map_menu_filter", 1, -1);
+			GetMenuFlashValueStorage().SetFlashInt( "worldmap.global.set.index", 1 );
+		}
+		else			
+			SetInitialFilters();
+		
 	}
+	
+	
+	private function SetInitialFilters()
+	{
+		GetMenuFlashValueStorage().SetFlashInt( "worldmap.global.set.index", FactsQuerySum("nge_map_menu_filter") );
+	}
+	
+	event  OnFiltersChanged(id : int)
+	{
+		FactsSet("nge_map_menu_filter", id, -1);
+	}
+	
+	
 	
 	protected function GetSavedDataMenuName() : name
 	{
@@ -806,6 +836,7 @@ class CR4MapMenu extends CR4MenuBase
 
 
 			case 'RoadSign':
+			case 'Harbor': 
 				label = GetLocStringByKeyExt( StrLower("map_location_" + targetPin.tag ) );
 				description = GetLocStringByKeyExt( StrLower("map_description_" + targetPin.tag ) );
 				break;
@@ -1138,6 +1169,7 @@ class CR4MapMenu extends CR4MenuBase
 		if ( idToRemove != 0 )
 		{
 			m_fxRemoveUserMapPin.InvokeSelfOneArg( FlashArgUInt( idToRemove ) );
+			theSound.SoundEvent("gui_hubmap_remove_pin");
 		}
 		if ( idToAdd != 0 )
 		{
@@ -1376,6 +1408,7 @@ class CR4MapMenu extends CR4MenuBase
 	event OnCategoryOpened( categoryName : name, opened : bool )
 	{
 		var i : int;
+
 		if( categoryName == 'None' )
 		{
 			return false;

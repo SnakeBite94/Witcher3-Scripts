@@ -1345,6 +1345,8 @@ state Swimming in CR4Player extends ExtendedMovable
 	
 	private var cameraPitch : float;
 	
+	private var lerpAmount : float; 
+	
 	event OnGameCameraPostTick( out moveData : SCameraMovementData, dt : float )
 	{
 		var cameraRotation : EulerAngles;
@@ -1357,6 +1359,11 @@ state Swimming in CR4Player extends ExtendedMovable
 		var playerToTargetVector : Vector;
 		var playerToTargetAngles : EulerAngles;
 		var playerToTargetPitch : float;
+		
+		
+		lerpAmount += dt/2;
+		lerpAmount = ClampF(lerpAmount,0,1);
+		
 		
 		cameraPosition = theCamera.GetCameraPosition();
 		waterLevel = theGame.GetWorld().GetWaterLevel(cameraPosition, true);
@@ -1463,8 +1470,12 @@ state Swimming in CR4Player extends ExtendedMovable
 		}
 		if ( theGame.IsFocusModeActive() )
 		{
-			moveData.pivotDistanceController.SetDesiredDistance(1.f);
+			
 			moveData.pivotRotationController.SetDesiredHeading(VecHeading(theCamera.GetCameraDirection()));
+			if(!parent.GetExplCamera())
+			{
+				DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.4f, 0.5f, -0.15f ), 0.40f, dt );
+			}	
 		}
 		
 		else if ( moveData.pivotDistanceController.controllerName == 'Diving' )
@@ -1482,6 +1493,19 @@ state Swimming in CR4Player extends ExtendedMovable
 				moveData.pivotDistanceController.SetDesiredDistance(2.75);
 			}
 		}
+		
+		
+		if(parent.GetExplCamera())
+		{	
+			moveData.pivotPositionController.SetDesiredPosition( parent.GetWorldPosition(), 15.f );
+			moveData.pivotDistanceController.SetDesiredDistance( 2.25f );
+		
+			moveData.pivotPositionController.offsetZ = 1.15f;
+
+			moveData.cameraLocalSpaceOffset = LerpV(moveData.cameraLocalSpaceOffset, Vector(0.74,-0.38,0.345), lerpAmount);
+			moveData.cameraLocalSpaceOffsetVel = Vector(0,0,0);	
+		}
+		
 		
 		super.OnGameCameraPostTick( moveData, dt );
 	}

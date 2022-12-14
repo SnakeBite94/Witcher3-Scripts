@@ -647,7 +647,7 @@ class W3DamageAction extends CDamageData
 	
 	public final function SetEndsQuen(b : bool)					{endsQuen = b;}
 	public final function EndsQuen() : bool						{return endsQuen;}
-	public final function SetArmorReducedDamageToZero()			{armorReducedDamageToZero = true;}
+	public final function SetArmorReducedDamageToZero( b : bool )	{armorReducedDamageToZero = b;} 
 	public final function DidArmorReduceDamageToZero() : bool	{return armorReducedDamageToZero;}
 	public final function SetUnderwaterDisplayDamageHack()		{underwaterDisplayDamageHack = true;}
 	public final function GetUnderwaterDisplayDamageHack() : bool	{return underwaterDisplayDamageHack;}
@@ -707,7 +707,10 @@ class W3DamageAction extends CDamageData
 		var burning : W3Effect_Burning;
 		
 		
-		isOk = ( attacker == thePlayer && IsActionWitcherSign() && IsCriticalHit() && GetWitcherPlayer().IsMutationActive(EPMT_Mutation2) );
+		
+		
+		isOk = ( attacker == thePlayer && IsActionWitcherSign() && IsCriticalHit() && ( GetWitcherPlayer().IsMutationActive(EPMT_Mutation2) || GetWitcherPlayer().IsSuperchargedSign() ) );
+		
 		
 		
 		if( !isOk )
@@ -717,5 +720,11 @@ class W3DamageAction extends CDamageData
 		}
 		
 		return isOk;
+	}
+	
+	
+	public final function GetPowerStatType() : ECharacterPowerStats
+	{
+		return powerStatType;
 	}
 }

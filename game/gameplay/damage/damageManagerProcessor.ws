@@ -63,6 +63,12 @@ class W3DamageManagerProcessor extends CObject
 				
 				
 				action.RemoveBuffsByType(EET_Bleeding);
+				
+				
+				action.RemoveBuffsByType(EET_Bleeding1);
+				action.RemoveBuffsByType(EET_Bleeding2);
+				action.RemoveBuffsByType(EET_Bleeding3);
+				
 			}
  		}
  		
@@ -321,7 +327,20 @@ class W3DamageManagerProcessor extends CObject
 			victimHealthPercBeforeHit = actorVictim.GetStatPercents(BCS_Vitality);
 		else
 			victimHealthPercBeforeHit = actorVictim.GetStatPercents(BCS_Essence);
-				
+			
+		
+		if ( actorVictim && playerAttacker && victimMonsterCategory == MC_Specter && playerAttacker.HasBuff(EET_Mutagen28) && !actorVictim.HasAbility( 'ShadowFormActive' ) )
+		{
+			actorVictim.BlockAbility('ShadowForm', true);			
+			actorVictim.BlockAbility('Flashstep', true);			
+			actorVictim.BlockAbility('EssenceRegen', true);
+			actorVictim.BlockAbility('Teleport', true);
+			
+			actorVictim.BlockAbility('Specter', true);			
+		}
+		
+
+	
 		
 		ProcessDamageIncrease( dmgInfos );
 					
@@ -799,6 +818,20 @@ class W3DamageManagerProcessor extends CObject
 		var aerondight	: W3Effect_Aerondight;
 		
 		
+		var aardDamage : SRawDamage;
+		var yrdens : array<W3YrdenEntity>;
+		var j, levelDiff : int;
+		var aardDamageF : float;
+		var spellPower, spellPowerAard, spellPowerYrden : float;
+		var spNetflix : SAbilityAttributeValue;
+		
+		
+		
+		var entities : array<CGameplayEntity>;
+		var skillPassiveMod : float;
+		
+
+		
 		
 		if(actorAttacker && !actorAttacker.IgnoresDifficultySettings() && !action.IsDoTDamage())
 		{
@@ -843,6 +876,49 @@ class W3DamageManagerProcessor extends CObject
 			}
 		}
 		
+		
+		
+		if(actorVictim && playerAttacker && GetWitcherPlayer().IsSetBonusActive( EISB_Netflix_2 ) && !action.IsDoTDamage() && ( (W3AardProjectile)action.causer || (W3AardEntity)action.causer)) 
+		{	
+			yrdens = GetWitcherPlayer().yrdenEntities;
+			
+			if(yrdens.Size() > 0)
+			{
+				spellPowerAard = CalculateAttributeValue(GetWitcherPlayer().GetAttributeValue('spell_power_aard'));
+				spellPowerYrden = CalculateAttributeValue(GetWitcherPlayer().GetAttributeValue('spell_power_yrden'));				
+				spellPower = ClampF(1 + spellPowerAard + spellPowerYrden + CalculateAttributeValue(GetWitcherPlayer().GetPowerStatValue(CPS_SpellPower)), 1, 3); 				
+			
+				for(i=0; i<yrdens.Size(); i+=1)
+				{
+					for(j=0; j<yrdens[i].validTargetsInArea.Size(); j+=1)
+					{			
+						if(yrdens[i].validTargetsInArea[j] == actorVictim )
+						{
+							levelDiff = playerAttacker.GetLevel() - actorVictim.GetLevel();
+							aardDamage.dmgType = theGame.params.DAMAGE_NAME_DIRECT;	
+							if( GetWitcherPlayer().CanUseSkill(S_Magic_s06) )
+								aardDamageF = (RandRangeF(375.0, 325.0) + (playerAttacker.GetLevel() * 1.8f) + (GetWitcherPlayer().GetSkillLevel(S_Magic_s06) * 100) ) * spellPower;
+							else
+								aardDamageF = (RandRangeF(375.0, 325.0) + (playerAttacker.GetLevel() * 1.8f) ) * spellPower;
+							
+							if( actorVictim.GetCharacterStats().HasAbilityWithTag('Boss') || (W3MonsterHuntNPC)actorVictim || (levelDiff < 0 && Abs(levelDiff) > theGame.params.LEVEL_DIFF_HIGH))
+							{
+								aardDamage.dmgVal = aardDamageF * 0.75f;
+							}					
+							else
+							{
+								aardDamage.dmgVal = aardDamageF;
+							}
+							
+							spNetflix = action.GetPowerStatValue();
+							aardDamage.dmgVal += 3 * actorVictim.GetHealth() * ( 0.01 + 0.03 * LogF( spNetflix.valueMultiplicative ) );
+							dmgInfos.PushBack(aardDamage);
+						}
+					}
+				}
+			}
+		}
+			
 		
 		if(actorVictim)
 		{
@@ -904,6 +980,9 @@ class W3DamageManagerProcessor extends CObject
 			{
 				dmgInfos[i].dmgVal *= (1 + rendRatio * staminaRendBonus.valueMultiplicative);
 			}
+			
+			
+			thePlayer.SetAttackActionName('');
 		}	
  
 		
@@ -934,6 +1013,34 @@ class W3DamageManagerProcessor extends CObject
 				actorVictim.CreateFXEntityAtPelvis( 'runeword_4', true );				
 			}
 		}
+		
+		
+		if( playerAttacker && actorVictim && attackAction.IsActionMelee() && GetWitcherPlayer().IsSetBonusActive( EISB_Wolf_1 ) )
+		{
+			FindGameplayEntitiesInRange( entities, playerAttacker, 50, 1000, , FLAG_OnlyAliveActors );
+			if( entities.Size() > 0 )
+			{
+				for( i=0; i<entities.Size(); i+=1 )
+				{
+					npcVictim = (CNewNPC) entities[i];
+					if( npcVictim )
+					{
+						if( npcVictim.HasBuff( EET_Bleeding ) )  bonusCount += 1;
+						if( npcVictim.HasBuff( EET_Bleeding1 ) ) bonusCount += 1;
+						if( npcVictim.HasBuff( EET_Bleeding2 ) ) bonusCount += 1;
+						if( npcVictim.HasBuff( EET_Bleeding3 ) ) bonusCount += 1;
+					}
+				}
+				
+				bonusCount *= ((W3PlayerWitcher)playerAttacker).GetSetPartsEquipped( EIST_Wolf );
+				
+				for( i=0; i<dmgInfos.Size() ; i+=1 )
+				{
+					dmgInfos[i].dmgVal *= 1 + bonusCount*0.01;
+				}
+			}
+		}
+		
 		
 		
 		if( playerAttacker && playerAttacker.IsLightAttack( attackAction.GetAttackName() ) && playerAttacker.HasBuff( EET_LynxSetBonus ) && !attackAction.WasDodged() ) 
@@ -979,13 +1086,26 @@ class W3DamageManagerProcessor extends CObject
 		}
 
 		
-		if ( playerAttacker && action.IsActionRanged() && ((W3Petard)action.causer) && GetWitcherPlayer().CanUseSkill(S_Perk_20) )
+		
+		
+		if ( playerAttacker && action.IsActionRanged() && ((W3Petard)action.causer) )
 		{
-			perk20Bonus = GetWitcherPlayer().GetSkillAttributeValue( S_Perk_20, 'dmg_multiplier', false, false);
+			skillPassiveMod = CalculateAttributeValue(GetWitcherPlayer().GetAttributeValue('potion_duration'));
 			for( i = 0 ; i < dmgInfos.Size() ; i+=1)
 			{
-				dmgInfos[i].dmgVal *= ( 1 + perk20Bonus.valueMultiplicative );
+				dmgInfos[i].dmgVal *= ( 1 + skillPassiveMod );
 			}
+			
+			
+			if ( GetWitcherPlayer().CanUseSkill(S_Perk_20) && !action.IsDoTDamage() )
+			{
+				perk20Bonus = GetWitcherPlayer().GetSkillAttributeValue( S_Perk_20, 'dmg_multiplier', false, false);
+				for( i = 0 ; i < dmgInfos.Size() ; i+=1)
+				{
+					dmgInfos[i].dmgVal *= ( 1 + perk20Bonus.valueMultiplicative );
+				}
+			}
+			
 		}
 		
 		
@@ -1173,15 +1293,21 @@ class W3DamageManagerProcessor extends CObject
 		if(pts <= 0 && perc <= 0)
 			return false;
 			
-		returnedDamage = pts + perc * action.GetDamageValueTotal();
+		
+		
+		returnedDamage = pts + perc * action.processedDmg.vitalityDamage;
+		
 		
 		
 		damageAction = new W3DamageAction in this;		
 		damageAction.Initialize( action.victim, action.attacker, NULL, "Mutagen26", EHRT_None, CPS_AttackPower, true, false, false, false );		
 		damageAction.SetCannotReturnDamage( true );		
-		damageAction.SetHitAnimationPlayType( EAHA_ForceNo );				
-		damageAction.AddDamage(theGame.params.DAMAGE_NAME_SILVER, returnedDamage);
-		damageAction.AddDamage(theGame.params.DAMAGE_NAME_PHYSICAL, returnedDamage);
+		damageAction.SetHitAnimationPlayType( EAHA_ForceNo );		
+		
+		
+		
+		damageAction.AddDamage(theGame.params.DAMAGE_NAME_DIRECT, returnedDamage);
+		
 		
 		theGame.damageMgr.ProcessAction(damageAction);
 		delete damageAction;
@@ -1355,6 +1481,11 @@ class W3DamageManagerProcessor extends CObject
 		var powerMod, criticalDamageBonus, min, max, critReduction, sp : SAbilityAttributeValue;
 		var mutagen : CBaseGameplayEffect;
 		var totalBonus : float;
+		
+		
+		var inv	: CInventoryComponent; 
+		var weaponName : name;
+		
 			
 		
 		powerMod = action.GetPowerStatValue();
@@ -1372,6 +1503,35 @@ class W3DamageManagerProcessor extends CObject
 		
 		if ( playerAttacker && (W3AardProjectile)action.causer )
 			powerMod.valueMultiplicative = 1;
+		
+		
+		
+		inv = actorAttacker.GetInventory();	
+		weaponName = inv.GetItemName( weaponId );
+		
+		if( !playerAttacker && actorVictim && !thePlayer.IsInFistFightMiniGame() && GetAttitudeBetween( thePlayer, actorAttacker ) == AIA_Friendly && !actorAttacker.HasTag( 'keira' ) && !actorAttacker.HasTag( 'Yennefer' )
+			&& ( actorAttacker.IsWeaponHeld( 'silversword' ) || actorAttacker.IsWeaponHeld( 'staff2h' ) || weaponName == 'fists_lightning' || weaponName == 'fists_fire' || actorAttacker.HasAbility( 'SkillWitcher' ) || actorAttacker.HasTag( 'regis' ) ) )
+		{
+			if ( powerMod.valueMultiplicative <= 0.1 )
+			{
+				actorAttacker.AddAbility( 'FCR3HighDamageBoost' );
+				actorAttacker.AddAbility( 'FCR3LowDamageBoost');
+			}
+			else if ( powerMod.valueMultiplicative <= 0.4 )
+			{
+				actorAttacker.AddAbility( 'FCR3MedDamageBoost' );
+				actorAttacker.AddAbility( 'FCR3LowDamageBoost' );
+			}
+			else if ( powerMod.valueMultiplicative <= 0.9 )
+			{
+				actorAttacker.AddAbility( 'FCR3MedDamageBoost' );
+			}
+			else if ( powerMod.valueMultiplicative <= 1.1 )
+			{
+				actorAttacker.AddAbility( 'FCR3LowDamageBoost' );
+			}
+		}
+		
 		
 		
 		if(action.IsCriticalHit())
@@ -1536,6 +1696,19 @@ class W3DamageManagerProcessor extends CObject
 		var temp : bool;
 		var fistfightDamageMult : float;
 		var burning : W3Effect_Burning;
+		
+		
+		var weaponName 		: name;
+		var dmgBonus 		: float;
+		var playerStlDmg 	: float;
+		var playerSlvDmg 	: float;
+		var playerFastSlvDmg: float;
+		var playerSlvCritDmg: float;
+		var multBonus 		: float;
+		var dmgLevel		: int;
+		var curStats		: SPlayerOffenseStats;
+		var inv				: CInventoryComponent;
+		
 	
 		
 		GetDamageResists(dmgInfo.dmgType, resistPoints, resistPercents);
@@ -1558,6 +1731,28 @@ class W3DamageManagerProcessor extends CObject
 			}
 			
 			finalDamage = MaxF(0, (dmgInfo.dmgVal + powerMod.valueBase) * powerMod.valueMultiplicative + powerMod.valueAdditive);
+			
+			
+			
+			inv = actorAttacker.GetInventory();	
+			weaponName = inv.GetItemName( weaponId );
+			if( thePlayer.IsCiri() )
+			{
+				dmgLevel = ( actorVictim.GetLevel() -2 ) * 10;
+			}
+			else
+			{
+				dmgLevel = Min( actorVictim.GetLevel(), GetWitcherPlayer().GetLevel() ) * 40;
+			}
+			
+			if( !playerAttacker && actorVictim && GetAttitudeBetween( thePlayer, actorAttacker ) == AIA_Friendly && !action.IsDoTDamage() && !actorAttacker.HasTag( 'Yennefer' ) && !actorAttacker.HasTag( 'keira' ) 
+				&& !actorAttacker.HasTag( 'Philippa' ) && ( actorAttacker.IsWeaponHeld( 'silversword' ) || actorAttacker.IsWeaponHeld( 'staff2h' ) || weaponName == 'fists_lightning' || weaponName == 'fists_fire' 
+				|| actorAttacker.HasAbility( 'SkillWitcher' ) || actorAttacker.HasTag( 'zoltan' ) || actorAttacker.HasTag( 'hjalmar' ) || actorAttacker.HasTag( 'regis' ) ) && ( finalDamage < dmgLevel || thePlayer.IsCiri() ) )
+			{
+				dmgBonus += dmgLevel - finalDamage;
+				finalDamage = MaxF(0, (dmgInfo.dmgVal + powerMod.valueBase + dmgBonus) * powerMod.valueMultiplicative + powerMod.valueAdditive);
+			}
+			
 		}
 			
 		finalIncomingDamage = finalDamage;
@@ -1570,7 +1765,7 @@ class W3DamageManagerProcessor extends CObject
 				finalDamage = MaxF(0, finalDamage - resistPoints);
 				
 				if(finalDamage == 0.f)
-					action.SetArmorReducedDamageToZero();
+					action.SetArmorReducedDamageToZero( true ); 
 			}
 		}
 		
@@ -1588,7 +1783,116 @@ class W3DamageManagerProcessor extends CObject
 				resistPercents += encumbranceBonus;
 			}
 			finalDamage *= 1 - resistPercents;
-		}		
+		}	
+
+
+
+		
+		
+		if( !playerAttacker && actorVictim && !action.IsDoTDamage() && !thePlayer.IsFistFightMinigameEnabled() && finalDamage <= actorVictim.GetMaxHealth() * 0.01 && GetAttitudeBetween( thePlayer, actorAttacker ) == AIA_Friendly )
+		{
+			dmgBonus += dmgLevel - finalDamage;
+			if ( powerMod.valueMultiplicative < 1.0 )
+			{
+				multBonus = 1.0 - powerMod.valueMultiplicative;
+			}
+			finalDamage = MaxF(actorVictim.GetMaxHealth() * 0.01, (dmgInfo.dmgVal + powerMod.valueBase + dmgBonus) * ( powerMod.valueMultiplicative + multBonus ) + powerMod.valueAdditive);
+			
+			if(!action.IsPointResistIgnored() && !(dmgInfo.dmgType == theGame.params.DAMAGE_NAME_ELEMENTAL || dmgInfo.dmgType == theGame.params.DAMAGE_NAME_FIRE || dmgInfo.dmgType == theGame.params.DAMAGE_NAME_FROST ))
+			{
+				finalDamage = MaxF(actorVictim.GetMaxHealth() * 0.01, finalDamage - resistPoints);
+				
+				if(finalDamage == 0.f)
+					action.SetArmorReducedDamageToZero( true );
+				else
+					action.SetArmorReducedDamageToZero( false );
+			}
+			
+			finalDamage *= 1 - resistPercents;
+		}
+		
+		
+		curStats = GetWitcherPlayer().GetOffenseStatsList();
+		playerStlDmg = MaxF(0, curStats.steelStrongDmg - resistPoints);
+		playerStlDmg *= 1 - resistPercents;
+		playerStlDmg /= 8;
+		
+		playerFastSlvDmg = MaxF(0, curStats.silverFastDmg - resistPoints);
+		playerFastSlvDmg *= 1 - resistPercents;
+		playerFastSlvDmg /= 8;
+
+		playerSlvDmg = MaxF(0, curStats.silverStrongDmg - resistPoints);
+		playerSlvDmg *= 1 - resistPercents;
+		playerSlvDmg /= 8;
+		
+		playerSlvCritDmg = MaxF(0, curStats.silverStrongCritDmg - resistPoints);
+		playerSlvCritDmg *= 1 - resistPercents;
+		playerSlvCritDmg /= 8;
+		
+		if( !playerAttacker && actorVictim && !action.IsDoTDamage() && !thePlayer.IsFistFightMinigameEnabled() && GetAttitudeBetween( thePlayer, actorAttacker ) == AIA_Friendly && !thePlayer.IsCiri()  )
+		{
+			if(finalDamage > playerStlDmg && !actorAttacker.HasAbility( 'ForceInstantKill' ))
+			{
+				if ( actorAttacker.HasTag( 'regis' ) )
+				{
+					if ( finalDamage > playerSlvCritDmg * 2 )
+					{
+						finalDamage = ClampF( finalDamage, 0, playerSlvCritDmg * 2 );
+						finalDamage = MaxF(actorVictim.GetMaxHealth() * 0.01, finalDamage);
+					}
+					if ( finalDamage < playerSlvCritDmg )
+					{
+						finalDamage = ClampF( finalDamage, playerSlvCritDmg, finalDamage );
+					}
+				}
+				else if ( actorAttacker.IsWeaponHeld( 'staff2h' ) || weaponName == 'fists_lightning' || weaponName == 'fists_fire' || action.GetPowerStatType() == CPS_SpellPower )
+				{
+					if ( finalDamage > playerSlvDmg * 2 )
+					{
+						finalDamage = ClampF( finalDamage, 0, playerSlvDmg );
+						finalDamage = MaxF(actorVictim.GetMaxHealth() * 0.01, finalDamage);
+					}
+					
+					if ( finalDamage < playerFastSlvDmg && attackAction )
+					{
+						finalDamage = ClampF( finalDamage, playerFastSlvDmg, finalDamage );
+					}
+				}
+				else if ( actorAttacker.IsWeaponHeld( 'silversword' ) || actorAttacker.HasAbility( 'SkillWitcher' ) )
+				{
+					if ( finalDamage > playerSlvCritDmg )
+					{
+						finalDamage = ClampF( finalDamage, 0, playerSlvCritDmg );
+						finalDamage = MaxF(actorVictim.GetMaxHealth() * 0.01, finalDamage);
+					}
+					if ( action.IsActionMelee() )
+					{
+						
+						if ( finalDamage < playerSlvDmg && actorVictim.UsesEssence() )
+						{
+							finalDamage = ClampF( finalDamage, playerSlvDmg, finalDamage );
+						}
+						else if ( finalDamage < playerStlDmg )
+						{
+							finalDamage = ClampF( finalDamage, playerStlDmg, finalDamage );
+						}
+					}
+				}
+				else
+				{
+					finalDamage = ClampF( finalDamage, 0, playerStlDmg );
+					finalDamage = MaxF(actorVictim.GetMaxHealth() * 0.01, finalDamage);
+				}
+			}
+		
+			
+			if(thePlayer.GetBossTag() != '' || (W3MonsterHuntNPC)actorVictim || actorVictim.GetCharacterStats().HasAbilityWithTag('Boss') || actorVictim.HasAbility( 'Boss' ) || actorVictim.HasAbility( 'SkillBoss') )
+			{
+				finalDamage = ClampF(finalDamage, 0, actorVictim.GetMaxHealth() * 0.005);
+			}
+		}
+		
+	
 		
 		if(dmgInfo.dmgType == theGame.params.DAMAGE_NAME_FIRE && finalDamage > 0)
 			action.SetDealtFireDamage(true);
@@ -1628,6 +1932,11 @@ class W3DamageManagerProcessor extends CObject
 			LogDMHits("Single hit damage: resistance perc = " + NoTrailZeros(resistPercents * 100), action);
 			LogDMHits("Single hit damage: final damage to sustain = " + NoTrailZeros(finalDamage), action);
 		}
+		
+		
+		if( playerVictim && actorAttacker && FactsQuerySum("NewGamePlus") > 0)
+			finalDamage *= 1.1;
+		
 			
 		return finalDamage;
 	}
@@ -1837,6 +2146,11 @@ class W3DamageManagerProcessor extends CObject
 		var playsNonAdditiveAnim		: bool;
 		var bleedCustomEffect 			: SCustomEffectParams;
 		
+		
+		var min, max 					: SAbilityAttributeValue;
+		var minDmg 						: float;
+		
+		
 		if(!actorVictim)
 			return;
 		
@@ -1864,8 +2178,21 @@ class W3DamageManagerProcessor extends CObject
 					bleedCustomEffect.effectType = EET_Bleeding;
 					bleedCustomEffect.creator = playerAttacker;
 					bleedCustomEffect.sourceName = SkillEnumToName(S_Sword_s05);
-					bleedCustomEffect.duration = CalculateAttributeValue(playerAttacker.GetSkillAttributeValue(S_Sword_s05, 'duration', false, true));
-					bleedCustomEffect.effectValue.valueAdditive = CalculateAttributeValue(playerAttacker.GetSkillAttributeValue(S_Sword_s05, 'dmg_per_sec', false, true)) * playerAttacker.GetSkillLevel(S_Sword_s05);
+					
+					
+					
+					theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'BleedingEffect', 'DirectDamage', min, max );
+					bleedCustomEffect.effectValue = min;
+					minDmg = CalculateAttributeValue(playerAttacker.GetSkillAttributeValue(S_Sword_s05, 'dmg_per_sec', false, true)) * playerAttacker.GetSkillLevel(S_Sword_s05);
+					dmg = bleedCustomEffect.effectValue.valueAdditive + (bleedCustomEffect.effectValue.valueMultiplicative * actorVictim.GetMaxHealth());
+					
+					if ( dmg < minDmg )
+					{
+						bleedCustomEffect.effectValue.valueAdditive += minDmg - dmg;
+					}
+					
+					
+					
 					actorVictim.AddEffectCustom(bleedCustomEffect);
 				}
 			}
@@ -2109,6 +2436,13 @@ class W3DamageManagerProcessor extends CObject
 				dismember = true;
 				dismemberExplosion = true;
 			}
+			
+			else if ( weaponName == 'fists_lightning' || weaponName == 'fists_fire' )
+			{
+				if(RandRange(100) > 75)
+					dismember = true;
+			}
+			
 			else
 			{
 				

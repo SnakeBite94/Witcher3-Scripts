@@ -787,6 +787,8 @@ function CheckNestDestructionAchievement(optional debugLog : bool)
 {
 	var entityMapPins : array< SEntityMapPinInfo >;
 	var i : int;
+	var totalNests : int;
+	var doneNests : int;
 	var depotPath : string;
 	var missesSomeNest : bool;
 	
@@ -816,31 +818,38 @@ function CheckNestDestructionAchievement(optional debugLog : bool)
 		LogAchievements("");
 	}
 	
+	totalNests = 0;
+	doneNests = 0;
 	missesSomeNest = false;
 	for(i=0; i<entityMapPins.Size(); i+=1)
 	{
 		
 		if(entityMapPins[i].entityType == 'MonsterNest')
 		{
+			totalNests+=1;
+			
 			
 			if(FactsQuerySum(entityMapPins[i].entityName + "_nest_destr") < 1)
 			{
 				missesSomeNest = true;
 				
-				if(!debugLog)
-				{
-					
-					break;
-				}
-				else
+				if(debugLog)
 				{
 					LogAchievements(EA_PestControl + ": not destroyed nest at: X=" + entityMapPins[i].entityPosition.X + ", Y= " + entityMapPins[i].entityPosition.Y + ", Z= " + entityMapPins[i].entityPosition.Z);
 				}
 			}
+			else
+			{
+				doneNests+=1;
+			}
 		}
 	}
 		
-	if(!missesSomeNest)
+	if(missesSomeNest)
+	{
+		theGame.GetGamerProfile().NoticeAchievementProgress(EA_PestControl, doneNests, totalNests);
+	}
+	else
 	{
 		theGame.GetGamerProfile().AddAchievement(EA_PestControl);
 		

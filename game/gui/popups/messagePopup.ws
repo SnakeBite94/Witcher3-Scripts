@@ -333,6 +333,7 @@ class CR4MessagePopup extends CR4PopupBase
 	event  OnProgressUpdateRequested():void 
 	{
 		var progressValue : float;
+		var progressValueInt : int = 0;
 		var currentMessageData : W3MessagePopupData;
 		
 		currentMessageData = GetCurrentMessageData();
@@ -344,7 +345,8 @@ class CR4MessagePopup extends CR4PopupBase
 			switch (currentMessageData.progressType)
 			{
 			case UMPT_Content:
-				progressValue = theGame.ProgressToContentAvailable(currentMessageData.progressTag);
+				progressValueInt = theGame.ProgressToContentAvailable(currentMessageData.progressTag);
+				progressValue = progressValueInt;
 				break;
 			case UMPT_GraphicsRefresh:
 				progressValue = currentMessageData.progress - 2;
@@ -357,7 +359,15 @@ class CR4MessagePopup extends CR4PopupBase
 				break;
 			}
 			
-			DisplayProgressBar(progressValue, currentMessageData.progressType);
+			if (progressValueInt == 100 && currentMessageData.progressTag == 'RequiredForSave')
+			{
+				
+				HideMessage(currentMessageData.messageId);
+			}
+			else
+			{
+				DisplayProgressBar(progressValue, currentMessageData.progressType);
+			}
 		}
 	}
 }

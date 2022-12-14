@@ -7,6 +7,17 @@
 
 
 
+exec function PlayMovieScene()
+{
+	var storyScene : CStoryScene;
+	
+	storyScene = (CStoryScene)LoadResource("movies\cutscenes\movie_player.w2scene", true);
+	theGame.GetStorySceneSystem().PlayScene( storyScene, "Input" );
+	
+	
+	
+}
+
 exec function m11cam( n : name )
 {
 	thePlayer.SetLoopingCameraShakeAnimName( n );
@@ -6512,6 +6523,31 @@ exec function spawnBoat000()
 	
 	template = (CEntityTemplate)LoadResource(nam);
 	ent = theGame.CreateEntity(template, pos, rot, true, false, false, PM_Persist );
+}
+
+exec function spawnPath(path : name, optional isHostile : bool)
+{
+	var ent : CEntity;
+	var pos : Vector;
+	var rot : EulerAngles;
+	var template : CEntityTemplate;
+	
+	rot = thePlayer.GetWorldRotation();	
+	rot.Yaw += 180;
+	pos = thePlayer.GetWorldPosition();
+	pos += VecConeRand(thePlayer.GetHeading(), 0, 3, 3);
+	
+	template = (CEntityTemplate)LoadResource(path,true);
+	ent = theGame.CreateEntity(template, pos, rot);
+	
+	if( isHostile )
+	{
+		((CActor)ent).SetTemporaryAttitudeGroup( 'hostile_to_player', AGP_Default );
+	}
+	else
+	{
+		((CActor)ent).SetTemporaryAttitudeGroup( 'friendly_to_player', AGP_Default );
+	}
 }
 
 exec function spawn(nam : name, optional quantity : int, optional distance : float, optional isHostile : bool, optional level : int )
@@ -14392,11 +14428,28 @@ exec function StopEffect( fx : name, optional entityTag : name )
 		ents[i].StopEffect( fx );
 	}
 }
-exec function DLCS()
-{
-	theGame.GetDLCManager().IsAllDLCsAvailable();
-}
+
 exec function Refill()
 {
 	thePlayer.inv.SingletonItemsRefillAmmoNoAlco(true);
+}
+
+exec function debugfirstlaunch()
+{
+	theGame.DebugFirstLaunch();
+}
+
+exec function debugforcecrash(crashType : string)
+{
+	if(!theGame.DebugForceCrash(crashType))
+		Log("temp.ws:debugforcecrash: Crash type not existing");
+	else
+		Log("temp.ws:debugforcecrash: Should've crashed by now, but certain types of crashed might be disabled or recovered from");
+}
+
+
+
+exec function writePGO(optional counter : int)
+{
+	theGame.WritePGO(counter);
 }

@@ -237,6 +237,8 @@ import class CDefinitionsManagerAccessor extends CObject
 		var isRelicGear : bool;
 		var level, baseLevel : int;
 		
+		var quality : int; 
+		
 		isWitcherGear = false;
 		isRelicGear = false;
 		
@@ -244,6 +246,8 @@ import class CDefinitionsManagerAccessor extends CObject
 		
 		if ( min.valueAdditive == 5) isWitcherGear = true;
 		if ( min.valueAdditive == 4) isRelicGear = true;
+		
+		quality = RoundMath( min.valueAdditive ); 
 		
 		itemCategory = GetItemCategory(itemName);
 		
@@ -294,11 +298,18 @@ import class CDefinitionsManagerAccessor extends CObject
 				itemAttributes.PushBack( max );
 				 break;
 				 
+			
+			case 'bolt' :
+				GetItemAttributeValueNoRandom(itemName, false, 'SilverDamage', min, max);
+				itemAttributes.PushBack( max );
+				break;
+			
+				 
 			default :
 				break;
 		}
 		
-		level = theGame.params.GetItemLevel(itemCategory, itemAttributes, itemName);
+		level = theGame.params.GetItemLevel(itemCategory, itemAttributes, itemName, baseLevel);
 		
 		if ( FactsQuerySum("NewGamePlus") > 0 )
 		{
@@ -308,11 +319,27 @@ import class CDefinitionsManagerAccessor extends CObject
 			}
 		}
 		
-		if ( isWitcherGear ) level = level - 2;
-		if ( isRelicGear ) level = level - 1;
+		
+		if ( itemCategory == 'bolt' )
+		{
+			
+			if ( level < thePlayer.GetLevel() )
+			{
+				level = thePlayer.GetLevel();
+			}
+		}
+		
+		else if ( isWitcherGear ) level = level - 2;
+		else if ( isRelicGear ) level = level - 1;
 		if ( level < 1 ) level = 1;
 		if ( ItemHasTag(itemName, 'OlgierdSabre') ) level = level - 3;
-		if ( (isRelicGear || isWitcherGear) && ItemHasTag(itemName, 'EP1') ) level = level - 1;
+		if ( ItemHasTag(itemName, 'EP1') )
+		{
+			if ( (isRelicGear || isWitcherGear) ) 
+			{
+				level = level - 1;
+			}
+		}
 		
 		if ( FactsQuerySum("NewGamePlus") > 0 )
 		{
@@ -334,7 +361,8 @@ import class CDefinitionsManagerAccessor extends CObject
 			ItemHasTag(itemName, theGame.params.ITEM_SET_TAG_WOLF) ||
 			ItemHasTag(itemName, theGame.params.ITEM_SET_TAG_RED_WOLF) ||
 			ItemHasTag(itemName, theGame.params.ITEM_SET_TAG_VAMPIRE ) ||
-			ItemHasTag(itemName, theGame.params.ITEM_SET_TAG_VIPER);
+			ItemHasTag(itemName, theGame.params.ITEM_SET_TAG_VIPER) ||
+			ItemHasTag(itemName, theGame.params.ITEM_SET_TAG_NETFLIX) ;
 	}
 	
 	

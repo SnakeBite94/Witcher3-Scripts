@@ -126,6 +126,7 @@ import statemachine class CStoryScenePlayer extends CEntity
 	
 	event OnMovieStarted()
 	{
+		FactsSet("nge_pause_menu_disabled",1,-1); 
 		
 		if( m_isFinalboard )
 		{
@@ -139,6 +140,7 @@ import statemachine class CStoryScenePlayer extends CEntity
 	
 	event OnMovieEnded()
 	{
+		FactsRemove("nge_pause_menu_disabled"); 
 		if ( theSound.GetCurrentGameState() != ESGS_MusicOnly )
 		{
 			if( theGame.envMgr.IsNight() )

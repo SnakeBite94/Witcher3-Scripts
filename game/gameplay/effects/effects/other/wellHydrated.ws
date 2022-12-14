@@ -32,11 +32,13 @@ class W3Effect_WellHydrated extends W3RegenEffect
 		
 		super.CalculateDuration(setInitialDuration);
 		
+		
 		if(isOnPlayer && thePlayer == GetWitcherPlayer() && GetWitcherPlayer().HasRunewordActive('Runeword 6 _Stats'))
 		{
 			val = target.GetAttributeValue('runeword6_duration_bonus');
-			duration *= 1 + val.valueMultiplicative;
+			duration *= ( 1 + val.valueMultiplicative );
 		}
+		
 	}
 	
 	protected function GetSelfInteraction( e : CBaseGameplayEffect) : EEffectInteract
@@ -76,4 +78,20 @@ class W3Effect_WellHydrated extends W3RegenEffect
 			}
 		}
 	}
+	
+	
+	protected function SetEffectValue()
+	{
+		var min, max : SAbilityAttributeValue;
+		
+		super.SetEffectValue();
+		
+		if( GetWitcherPlayer().HasRunewordActive( 'Runeword 6 _Stats' ) )
+		{
+			theGame.GetDefinitionsManager().GetAbilityAttributeValue('Runeword 6 _Stats', 'runeword6_duration_bonus', min, max);
+			effectValue.valueAdditive *= ( 1 + min.valueMultiplicative );
+		}
+		
+	}
+	
 }

@@ -23,11 +23,15 @@ class W3Mutagen17_Effect extends W3Mutagen_Effect
 		{
 			cnt = 0;
 			
-			if(FactsQuerySum("ach_counter") > 0)	cnt += 1;
-			if(FactsQuerySum("ach_attack") > 0)		cnt += 1;
-			if(FactsQuerySum("ach_sign") > 0)		cnt += 1;
-			if(FactsQuerySum("ach_bomb") >0)		cnt += 1;
-			if(FactsQuerySum("ach_crossbow") >0)	cnt += 1;
+			
+			
+			if(FactsQuerySum("ach_attack_light") > 0)	cnt += 1;
+			if(FactsQuerySum("ach_attack_heavy") > 0)	cnt += 1;
+			
+			if(FactsQuerySum("ach_counter") > 0)		cnt += 1;			
+			if(FactsQuerySum("ach_sign") > 0)			cnt += 1;
+			if(FactsQuerySum("ach_bomb") >0)			cnt += 1;
+			if(FactsQuerySum("ach_crossbow") >0)		cnt += 1;
 			
 			if(cnt >= 3)
 			{

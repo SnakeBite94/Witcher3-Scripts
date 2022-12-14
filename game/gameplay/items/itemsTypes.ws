@@ -167,8 +167,9 @@ function GetLocNameFromEquipSlot(slotType : EEquipmentSlots) : name
 	case EES_RangedWeapon:
 		return 'panel_inventory_paperdoll_slotname_rangeweapon';
 	case EES_Quickslot1:
+		return 'panel_inventory_paperdoll_slotname_quickitems';	
 	case EES_Quickslot2:
-		return 'panel_inventory_paperdoll_slotname_quickitems';
+		return 'item_category_mask';	
 	case EES_Unused:
 	case EES_Hair:
 		return '';

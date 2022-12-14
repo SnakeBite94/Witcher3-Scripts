@@ -174,14 +174,23 @@ class CBTTaskDodge extends CBTTaskPlayAnimationEventDecorator
 	{
 		var npc : CNewNPC = GetNPC();
 		
-		dodgeChanceAttackLight	= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_melee_light_chance')));
-		dodgeChanceAttackHeavy	= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_melee_heavy_chance')));
+		
+		var multiplier : float;
+
+		if( FactsQuerySum("NewGamePlus") > 0 )
+			multiplier = 1.15;
+		else
+			multiplier = 1.0;
+		
+		
+		dodgeChanceAttackLight	= (int)(ClampF(multiplier*100*CalculateAttributeValue(npc.GetAttributeValue('dodge_melee_light_chance')),0,100));	
+		dodgeChanceAttackHeavy	= (int)(ClampF(multiplier*100*CalculateAttributeValue(npc.GetAttributeValue('dodge_melee_heavy_chance')),0,100));	
 		dodgeChanceAard			= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_magic_chance')));
 		dodgeChanceIgni			= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_magic_chance')));
 		dodgeChanceBomb			= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_bomb_chance')));
 		dodgeChanceProjectile	= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_projectile_chance')));
 		dodgeChanceFear			= (int)(100*CalculateAttributeValue(npc.GetAttributeValue('dodge_fear_chance')));
-		counterChance 			= MaxF(0, 100*CalculateAttributeValue(npc.GetAttributeValue('counter_chance')));
+		counterChance 			= MaxF(0, ClampF(multiplier*100*CalculateAttributeValue(npc.GetAttributeValue('counter_chance')),0,100));			
 		hitsToCounter 			= (int)MaxF(0, CalculateAttributeValue(npc.GetAttributeValue('hits_to_roll_counter')));
 		counterMultiplier 		= (int)MaxF(0, 100*CalculateAttributeValue(npc.GetAttributeValue('counter_chance_per_hit')));
 		counterChance 			+= Max( 0, npc.GetDefendCounter() ) * counterMultiplier;

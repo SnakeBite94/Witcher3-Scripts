@@ -21,6 +21,11 @@ class W3GamerProfile
 		LogAchievements("Achievement <<" + a + ">> unlocked!");
 	}
 	
+	public function NoticeAchievementProgress(a : EAchievement, countNew : int, optional towards : int )
+	{
+		theGame.NoticeAchievementProgress(AchievementEnumToName(a), countNew, towards);
+	}		
+	
 	
 	public function Init()
 	{
@@ -122,31 +127,56 @@ class W3GamerProfile
 	
 	public function CheckLearningTheRopes()
 	{
-		if(FactsQuerySum("ach_counter") == 1 && FactsQuerySum("ach_attack") == 1 && FactsQuerySum("ach_sign") == 1 && FactsQuerySum("ach_bomb") == 1)
+		var doneRopes : int;
+		doneRopes = 0;
+
+		if(FactsQuerySum("ach_counter") == 1)
+			doneRopes += 1;
+		if(FactsQuerySum("ach_attack") == 1)
+			doneRopes += 1;
+		if(FactsQuerySum("ach_sign") == 1)
+			doneRopes += 1;
+		if(FactsQuerySum("ach_bomb") == 1)
+			doneRopes += 1;
+			
+		if(doneRopes >= 4)
 		{
 			AddAchievement(EA_LearningTheRopes);
 		}		
+		else
+		{
+			NoticeAchievementProgress(EA_LearningTheRopes, doneRopes);
+		}
 	}
 	
 	public final function CheckTrialOfGrasses()
 	{
 		var witcher : W3PlayerWitcher;
+		var doneMutagens : int;
 		
 		witcher = GetWitcherPlayer();
 		if(!witcher)
 			return;
 		
 		
-		if(!witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen4))
-			return;
-		if(!witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen3))
-			return;
-		if(!witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen2))
-			return;
-		if(!witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen1))
-			return;
-				
-		AddAchievement(EA_TrialOfGrasses);
+		doneMutagens = 0;
+		if(witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen4))
+			doneMutagens += 1;
+		if(witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen3))
+			doneMutagens += 1;
+		if(witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen2))
+			doneMutagens += 1;
+		if(witcher.IsAnyItemEquippedOnSlot(EES_SkillMutagen1))
+			doneMutagens += 1;
+
+		if(doneMutagens >= 4)
+		{
+			AddAchievement(EA_TrialOfGrasses);
+		}
+		else
+		{
+			NoticeAchievementProgress(EA_TrialOfGrasses, doneMutagens);
+		}
 	}
 		
 	
@@ -223,7 +253,7 @@ class W3GamerProfile
 		var i, idx : int;
 		var achievementType : EAchievement;
 		var statName : name;
-		var currStatVal : int;
+		var currStatVal, topVal : int;
 	
 		idx = GetStatisticIndex(statEnum);
 		statName = StatisticEnumToName(statEnum);
@@ -233,12 +263,17 @@ class W3GamerProfile
 		for(i=statistics[idx].registeredAchievements.Size()-1; i>=0; i-=1)
 		{
 			achievementType = statistics[idx].registeredAchievements[i].type;
+			topVal = (int)(statistics[idx].registeredAchievements[i].requiredValue);
 			
 			
-			if(statistics[idx].registeredAchievements[i].requiredValue <= currStatVal)
+			if(topVal <= currStatVal)
 			{
 				
 				AddAchievement(achievementType);
+			}
+			else 
+			{
+				NoticeAchievementProgress(achievementType, currStatVal, topVal);
 			}
 		}		
 	}

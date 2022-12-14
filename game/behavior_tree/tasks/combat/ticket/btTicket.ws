@@ -157,7 +157,7 @@ abstract class CTicketBaseAlgorithm extends ITicketAlgorithmScript
 		}
 		
 		
-		if ( target != thePlayer && !target.GetGameplayVisibility() )
+		if ( target != thePlayer && !target.GetGameplayVisibility() && !owner.HasTag( 'regis' ) ) 
 		{
 			return false;
 		}

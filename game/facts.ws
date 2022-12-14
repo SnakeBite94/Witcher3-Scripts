@@ -20,7 +20,7 @@ struct SFactParameters
 }
 
 
-import function FactsAdd( ID : string, optional value : int, optional validFor : int  );
+import function FactsAdd( ID : string, optional value : int, optional validFor : int , optional telemetryEvent : bool , optional storyScenePlayer : CStoryScenePlayer );
 
 
 import function FactsQuerySum( ID : string ) : int;

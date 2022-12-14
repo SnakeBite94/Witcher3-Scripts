@@ -11,7 +11,8 @@ enum EInputDeviceType
 	IDT_Steam = 2,
 	IDT_KeyboardMouse = 3,
 	IDT_Tablet = 4,
-	IDT_Unknown = 5
+	IDT_Unknown = 5,
+	IDT_PS5 = 6,
 }
 
 import class CInputManager
@@ -57,6 +58,9 @@ import class CInputManager
 			case 'ps4pad':
 				return IDT_PS4;
 				break;
+			case 'ps5pad':
+				return IDT_PS5;
+				break;
 			case 'steampad':
 				return IDT_Steam;
 				break;
@@ -101,6 +105,8 @@ import class CInputManager
 	
 	
 	import final function GetCurrentKeysForActionStr( actionName : string, out outKeys : array< EInputKey > );
+	
+	import final function SuppressPropagatingEventAfterAction( actionName : name );
 	
 	function IsActionPressed( actionName : name ) : bool
 	{

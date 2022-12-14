@@ -72,7 +72,8 @@ class W3Effect_KnockdownTypeApplicator extends W3ApplicatorEffect
 		{
 			appliedType = EET_Knockdown;
 		}
-		else if( aardPower >= 1.2 )
+		
+		else if( aardPower >= 2.0 + ClampF( ( npc.GetLevel() - thePlayer.GetLevel() ) * 0.1, 0, 1 ) ) 
 		{
 			appliedType = EET_HeavyKnockdown;
 		}

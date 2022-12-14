@@ -61,7 +61,39 @@ state TraverseExploration in CPlayer extends Base
 		
 		
 		super.OnLeaveState(nextStateName);
+		
+		
+		thePlayer.SetLadderCamReset(false);
 	}
+	
+	
+	
+	
+	event OnGameCameraPostTick( out moveData : SCameraMovementData, dt : float )
+	{	
+		var input : float;	
+	
+		moveData.pivotRotationController.StopRotating();		
+		moveData.pivotRotationController.SetDesiredHeading(thePlayer.GetHeading(),0.4f);
+		
+		if(thePlayer.GetLadderCamReset())
+			moveData.pivotRotationController.SetDesiredPitch(-15.f,0.7f);
+		else
+		{
+			input = theInput.GetActionValue('GI_AxisLeftY');
+			moveData.pivotRotationController.SetDesiredPitch(input * 30,0.5f);
+		}
+		
+		if(thePlayer.GetExplCamera())
+		{	
+			moveData.pivotPositionController.SetDesiredPosition( thePlayer.GetWorldPosition() , 15.f );
+			moveData.pivotDistanceController.SetDesiredDistance( 1.5f );	
+			moveData.pivotPositionController.offsetZ = 1.15f;
+			
+			DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 6.0f, -3.1f, 1.2f ), 2.0f, dt );
+		}
+	}
+	
 	
 	
 	

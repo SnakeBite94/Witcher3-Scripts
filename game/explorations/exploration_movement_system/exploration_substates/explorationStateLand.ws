@@ -85,14 +85,14 @@ class CExplorationStateLand extends CExplorationStateAbstract
 	
 	
 	private	  editable			var m_AutoRollB				: bool;			default	m_AutoRollB					= false;
-	private	  editable			var m_AutoSlopeAngleB		: float;		default	m_AutoSlopeAngleB			= 30.0f;
+	private	  editable			var m_AutoSlopeAngleB		: float;		default	m_AutoSlopeAngleB			= 30.0f; 	
 	private	  					var m_AutoRollSlopeCoefF	: float;		
 	private	  editable			var m_DamageOverridesRollB	: bool;			default	m_DamageOverridesRollB		= false;
 	protected					var m_RollingB				: bool;
 	private						var	m_RollIsSlopeB			: bool;
-	protected editable			var	m_RollMinHeightF		: float;		default	m_RollMinHeightF			= 0.5f;
-	protected editable			var	m_RollTimeAfterF		: float;		default	m_RollTimeAfterF			= 0.1f;
-	protected editable 			var m_RollMinJumpTotalF 	: float; 		default m_RollMinJumpTotalF 		= 0.02f;
+	protected editable			var	m_RollMinHeightF		: float;		default	m_RollMinHeightF			= 1.05f;	
+	protected editable			var	m_RollTimeAfterF		: float;		default	m_RollTimeAfterF			= 0.1f;		
+	protected editable 			var m_RollMinJumpTotalF 	: float; 		default m_RollMinJumpTotalF 		= 1.02f;	
 	
 	
 	protected 					var m_SlidingB					: bool;

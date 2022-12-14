@@ -195,6 +195,7 @@ class CExplorationCollisionManager
 		}
 		
 		
+		SetPlayerCollisionBehaviorData();
 		
 		
 		UpdateCollidingSideEvent( _Dt );		

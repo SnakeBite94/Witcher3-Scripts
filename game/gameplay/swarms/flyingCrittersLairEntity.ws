@@ -229,6 +229,11 @@ import class CFlyingCrittersLairEntityScript  extends CFlyingCrittersLairEntity
 			{
 				action = new W3DamageAction in this;
 				action.Initialize( this, (CGameplayEntity)entity, this, this.GetName()+"_"+"root_projectile", EHRT_None, CPS_AttackPower,false,false,false,true);
+				
+				
+				action.SetIgnoreArmor( true );
+				
+				
 				action.AddDamage(theGame.params.DAMAGE_NAME_RENDING, damage );
 				
 				

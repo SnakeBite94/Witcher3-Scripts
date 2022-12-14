@@ -215,6 +215,13 @@ class BTTaskCaretakerManager extends IBehTreeTask
 			
 			
 			
+			m_Npc.RemoveAllBuffsOfType( EET_Bleeding1 );
+			m_Npc.RemoveAllBuffsOfType( EET_Bleeding2 );
+			m_Npc.RemoveAllBuffsOfType( EET_Bleeding3 );
+			
+			
+			
+			
 			FindGameplayEntitiesInSphere( l_entities, m_Npc.GetWorldPosition(), 10, -1 );
 			
 			for( i = 0; i < l_entities.Size(); i += 1 )

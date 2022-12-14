@@ -168,6 +168,7 @@ enum EEffectType
 	EET_PetriPhiltre,
 	EET_Swallow,
 	EET_TawnyOwl,
+
 	EET_Thunderbolt,
 EET_Unused1,
 	EET_WhiteHoney,
@@ -300,6 +301,16 @@ EET_Unused1,
 	EET_Mutation5,
 	EET_ToxicityVenom,
 	EET_BasicQuen,
+	
+	
+	EET_ReinaldPhiltre,
+	
+	
+	EET_Bleeding1,
+	EET_Bleeding2,
+	EET_Bleeding3,
+	
+	
 	
 	
 EET_EffectTypesSize,

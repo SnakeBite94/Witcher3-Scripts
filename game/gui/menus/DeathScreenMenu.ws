@@ -29,8 +29,8 @@ class CR4DeathScreenMenu extends CR4MenuBase
 			tutorialPopupRef.ClosePopup();
 		}
 		
-		theSound.EnterGameState(ESGS_Death);
-		theSound.SoundEvent( 'gui_global_player_death_thump' );
+		
+		
 		
 		theGame.Pause( "DeathScreen" );
 		
@@ -113,18 +113,7 @@ class CR4DeathScreenMenu extends CR4MenuBase
 			l_FlashArray.PushBackFlashObject( l_DataFlashObject );
 			
 			l_DataFlashObject = m_flashValueStorage.CreateTempFlashObject();	
-			if (theGame.GetPlatform() == Platform_Xbox1)
-			{
-				l_DataFlashObject.SetMemberFlashString	( "label", GetLocStringByKeyExt("panel_button_deathscreen_load_x1") );
-			}
-			else if (theGame.GetPlatform() == Platform_PS4)
-			{
-				l_DataFlashObject.SetMemberFlashString	( "label", GetLocStringByKeyExt("panel_button_deathscreen_load_ps4") );
-			}
-			else
-			{
-				l_DataFlashObject.SetMemberFlashString	( "label", GetLocStringByKeyExt("panel_button_deathscreen_load") );
-			}
+			l_DataFlashObject.SetMemberFlashString( "label", GetPlatformLocString("panel_button_deathscreen_load" ) );
 			l_DataFlashObject.SetMemberFlashUInt	( "tag", NameToFlashUInt('Load') );
 			l_FlashArray.PushBackFlashObject( l_DataFlashObject );
 		

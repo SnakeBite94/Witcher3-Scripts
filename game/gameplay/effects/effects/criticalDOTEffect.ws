@@ -129,6 +129,8 @@ abstract class W3CriticalDOTEffect extends W3DamageOverTimeEffect
 		var boatComp : CBoatComponent;
 		var params : W3BuffDoTParams;
 		var perk20Bonus : SAbilityAttributeValue;
+		
+		var skillPassiveMod : float; 
 				
 		
 		if(IsImmuneToAllDamage(100000))		
@@ -139,11 +141,25 @@ abstract class W3CriticalDOTEffect extends W3DamageOverTimeEffect
 		
 		params = (W3BuffDoTParams)customParams;
 		
-		if( params && params.isPerk20Active )
+		
+		if( params )
 		{
-			perk20Bonus = GetWitcherPlayer().GetSkillAttributeValue( S_Perk_20, 'dmg_multiplier', false, false);
-			effectValue.valueAdditive *= ( 1 + perk20Bonus.valueMultiplicative );
+			if( params.isFromBomb )
+			{
+				skillPassiveMod = CalculateAttributeValue(GetWitcherPlayer().GetAttributeValue('potion_duration'));
+				effectValue.valueAdditive *= ( 1 + skillPassiveMod );
+			}
+			
+			if( params.isPerk20Active )
+			{
+				
+				
+				
+			}
 		}
+		
+		
+		
 			
 		
 		super.OnEffectAdded(customParams);

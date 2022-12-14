@@ -81,6 +81,27 @@ import class CR4GwintManager extends IGameSystem
 		return FactsDoesExist("Gwint_Card_Looted");
 	}
 	
+	function leaderIndexToFaction(leader : int) : eGwintFaction
+	{
+		if(leader >= 1000 && leader < 2000)
+			return GwintFaction_NothernKingdom;
+		else if(leader >= 2000 && leader < 3000)
+			return GwintFaction_Nilfgaard;
+		else if(leader >= 3000 && leader < 4000)
+			return GwintFaction_Scoiatael;
+		else if(leader >= 4000 && leader < 5000)
+			return GwintFaction_NoMansLand;
+		else if(leader >= 5000 && leader < 6000)
+			return GwintFaction_Skellige;
+		else
+			return GwintFaction_Neutral;
+	}
+	
+	public function OpponentFaction() : eGwintFaction
+	{
+		return leaderIndexToFaction(enemyDecks[selectedEnemyDeck].leaderIndex);
+	}
+	
 	event  OnGwintSetupNewgame()
 	{
 		var northernPlayerDeck : SDeckDefinition;
@@ -782,7 +803,8 @@ import class CR4GwintManager extends IGameSystem
 			BaronDeck.dynamicCardRequirements.PushBack(diff14);
 			BaronDeck.dynamicCards.PushBack(15); 
 			BaronDeck.dynamicCardRequirements.PushBack(diff14);
-			BaronDeck.dynamicCards.PushBack(7); 
+			BaronDeck.dynamicCards.PushBack(26); 
+			BaronDeck.dynamicCards.PushBack(28); 
 
 			BaronDeck.specialCard = 109; 
 			BaronDeck.leaderIndex = 1001;
@@ -843,7 +865,7 @@ import class CR4GwintManager extends IGameSystem
 			RocheDeck.dynamicCardRequirements.PushBack(diff7);
 			RocheDeck.dynamicCards.PushBack(2); 
 			RocheDeck.dynamicCardRequirements.PushBack(diff9);
-			RocheDeck.dynamicCards.PushBack(10); 
+			RocheDeck.dynamicCards.PushBack(27); 
 			RocheDeck.dynamicCardRequirements.PushBack(diff11);
 			RocheDeck.dynamicCards.PushBack(11); 
 			RocheDeck.dynamicCardRequirements.PushBack(diff11);
@@ -851,7 +873,8 @@ import class CR4GwintManager extends IGameSystem
 			RocheDeck.dynamicCardRequirements.PushBack(diff14);
 			RocheDeck.dynamicCards.PushBack(12); 
 			RocheDeck.dynamicCardRequirements.PushBack(diff14);
-			RocheDeck.dynamicCards.PushBack(7); 
+			RocheDeck.dynamicCards.PushBack(26); 
+			RocheDeck.dynamicCards.PushBack(28); 
 
 
 			RocheDeck.specialCard = -1;
@@ -910,9 +933,10 @@ import class CR4GwintManager extends IGameSystem
 			SjustaDeck.dynamicCardRequirements.PushBack(diff11);
 			SjustaDeck.dynamicCards.PushBack(8);
 			SjustaDeck.dynamicCardRequirements.PushBack(diff14);
-			SjustaDeck.dynamicCards.PushBack(10);
+			SjustaDeck.dynamicCards.PushBack(27);
 			SjustaDeck.dynamicCardRequirements.PushBack(diff14);
-			SjustaDeck.dynamicCards.PushBack(7); 
+			SjustaDeck.dynamicCards.PushBack(26); 
+			SjustaDeck.dynamicCards.PushBack(28); 
 
 			SjustaDeck.specialCard = -1;
 			SjustaDeck.leaderIndex = 1004; 
@@ -984,8 +1008,8 @@ import class CR4GwintManager extends IGameSystem
 			StjepanDeck.dynamicCardRequirements.PushBack(diff14);
 			StjepanDeck.dynamicCards.PushBack(12);
 			StjepanDeck.dynamicCardRequirements.PushBack(diff14);
-			StjepanDeck.dynamicCards.PushBack(7); 
-
+			StjepanDeck.dynamicCards.PushBack(26); 
+			StjepanDeck.dynamicCards.PushBack(28); 
 
 			StjepanDeck.specialCard = 9; 
 			StjepanDeck.leaderIndex = 2003; 
@@ -1048,9 +1072,10 @@ import class CR4GwintManager extends IGameSystem
 			CrossroadsDeck.dynamicCardRequirements.PushBack(diff11);
 			CrossroadsDeck.dynamicCards.PushBack(13);
 			CrossroadsDeck.dynamicCardRequirements.PushBack(diff14);
-			CrossroadsDeck.dynamicCards.PushBack(7); 
+			CrossroadsDeck.dynamicCards.PushBack(26); 
+			CrossroadsDeck.dynamicCards.PushBack(28); 
 			CrossroadsDeck.dynamicCardRequirements.PushBack(diff14);
-			CrossroadsDeck.dynamicCards.PushBack(10);
+			CrossroadsDeck.dynamicCards.PushBack(27);
 
 			CrossroadsDeck.specialCard = 201; 
 			CrossroadsDeck.leaderIndex = 2002; 
@@ -1107,7 +1132,8 @@ import class CR4GwintManager extends IGameSystem
 			BoatBuilderDeck.dynamicCardRequirements.PushBack(diff11);
 			BoatBuilderDeck.dynamicCards.PushBack(260);
 			BoatBuilderDeck.dynamicCardRequirements.PushBack(diff14);
-			BoatBuilderDeck.dynamicCards.PushBack(7); 
+			BoatBuilderDeck.dynamicCards.PushBack(26); 
+			BoatBuilderDeck.dynamicCards.PushBack(28); 
 			BoatBuilderDeck.dynamicCardRequirements.PushBack(diff14);
 			BoatBuilderDeck.dynamicCards.PushBack(12);
 
@@ -1184,9 +1210,10 @@ import class CR4GwintManager extends IGameSystem
 			MarkizaDeck.dynamicCardRequirements.PushBack(diff11);
 			MarkizaDeck.dynamicCards.PushBack(14);
 			MarkizaDeck.dynamicCardRequirements.PushBack(diff14);
-			MarkizaDeck.dynamicCards.PushBack(7); 
+			MarkizaDeck.dynamicCards.PushBack(26); 
+			MarkizaDeck.dynamicCards.PushBack(28); 
 			MarkizaDeck.dynamicCardRequirements.PushBack(diff14);
-			MarkizaDeck.dynamicCards.PushBack(10);
+			MarkizaDeck.dynamicCards.PushBack(27);
 
 			MarkizaDeck.specialCard = 202; 
 			MarkizaDeck.leaderIndex = 2001; 
@@ -1240,13 +1267,14 @@ import class CR4GwintManager extends IGameSystem
 			GremistaDeck.dynamicCardRequirements.PushBack(diff7);
 			GremistaDeck.dynamicCards.PushBack(12);
 			GremistaDeck.dynamicCardRequirements.PushBack(diff9);
-			GremistaDeck.dynamicCards.PushBack(10);
+			GremistaDeck.dynamicCards.PushBack(27);
 			GremistaDeck.dynamicCardRequirements.PushBack(diff11);
 			GremistaDeck.dynamicCards.PushBack(8);
 			GremistaDeck.dynamicCardRequirements.PushBack(diff11);
 			GremistaDeck.dynamicCards.PushBack(9);
 			GremistaDeck.dynamicCardRequirements.PushBack(diff14);
-			GremistaDeck.dynamicCards.PushBack(7); 
+			GremistaDeck.dynamicCards.PushBack(26); 
+			GremistaDeck.dynamicCards.PushBack(28); 
 			GremistaDeck.dynamicCardRequirements.PushBack(diff14);
 			GremistaDeck.dynamicCards.PushBack(16);
 
@@ -1324,7 +1352,8 @@ import class CR4GwintManager extends IGameSystem
 			ZoltanDeck.dynamicCardRequirements.PushBack(diff11);
 			ZoltanDeck.dynamicCards.PushBack(14);
 			ZoltanDeck.dynamicCardRequirements.PushBack(diff14);
-			ZoltanDeck.dynamicCards.PushBack(7); 
+			ZoltanDeck.dynamicCards.PushBack(26); 
+			ZoltanDeck.dynamicCards.PushBack(28); 
 			ZoltanDeck.dynamicCardRequirements.PushBack(diff14);
 			ZoltanDeck.dynamicCards.PushBack(16);
 
@@ -1388,7 +1417,7 @@ import class CR4GwintManager extends IGameSystem
 			LambertDeck.dynamicCardRequirements.PushBack(diff14);
 			LambertDeck.dynamicCards.PushBack(15);
 			LambertDeck.dynamicCardRequirements.PushBack(diff14);
-			LambertDeck.dynamicCards.PushBack(10);
+			LambertDeck.dynamicCards.PushBack(27);
 
 
 			
@@ -1525,7 +1554,8 @@ import class CR4GwintManager extends IGameSystem
 			VimmeDeck.dynamicCardRequirements.PushBack(diff11);
 			VimmeDeck.dynamicCards.PushBack(11);
 			VimmeDeck.dynamicCardRequirements.PushBack(diff14);
-			VimmeDeck.dynamicCards.PushBack(7); 
+			VimmeDeck.dynamicCards.PushBack(26); 
+			VimmeDeck.dynamicCards.PushBack(28); 
 			VimmeDeck.dynamicCardRequirements.PushBack(diff14);
 			VimmeDeck.dynamicCards.PushBack(14);
 
@@ -1670,9 +1700,10 @@ import class CR4GwintManager extends IGameSystem
 			CrachDeck.dynamicCardRequirements.PushBack(diff11);
 			CrachDeck.dynamicCards.PushBack(14);
 			CrachDeck.dynamicCardRequirements.PushBack(diff14);
-			CrachDeck.dynamicCards.PushBack(7); 
+			CrachDeck.dynamicCards.PushBack(26); 
+			CrachDeck.dynamicCards.PushBack(28); 
 			CrachDeck.dynamicCardRequirements.PushBack(diff14);
-			CrachDeck.dynamicCards.PushBack(10);
+			CrachDeck.dynamicCards.PushBack(27);
 
 
 			CrachDeck.specialCard = 400; 
@@ -1746,7 +1777,7 @@ import class CR4GwintManager extends IGameSystem
 			LugosDeck.dynamicCardRequirements.PushBack(diff14);
 			LugosDeck.dynamicCards.PushBack(2); 
 			LugosDeck.dynamicCardRequirements.PushBack(diff14);
-			LugosDeck.dynamicCards.PushBack(10);
+			LugosDeck.dynamicCards.PushBack(27);
 
 
 			LugosDeck.specialCard = 464; 
@@ -1817,7 +1848,8 @@ import class CR4GwintManager extends IGameSystem
 			HermitDeck.dynamicCardRequirements.PushBack(diff11);
 			HermitDeck.dynamicCards.PushBack(14);
 			HermitDeck.dynamicCardRequirements.PushBack(diff14);
-			HermitDeck.dynamicCards.PushBack(7); 
+			HermitDeck.dynamicCards.PushBack(26); 
+			HermitDeck.dynamicCards.PushBack(28); 
 			HermitDeck.dynamicCardRequirements.PushBack(diff14);
 			HermitDeck.dynamicCards.PushBack(12);
 
@@ -1893,7 +1925,8 @@ import class CR4GwintManager extends IGameSystem
 			OlivierDeck.dynamicCardRequirements.PushBack(diff11);
 			OlivierDeck.dynamicCards.PushBack(8);
 			OlivierDeck.dynamicCardRequirements.PushBack(diff14);
-			OlivierDeck.dynamicCards.PushBack(7); 
+			OlivierDeck.dynamicCards.PushBack(26); 
+			OlivierDeck.dynamicCards.PushBack(28); 
 			OlivierDeck.dynamicCardRequirements.PushBack(diff14);
 			OlivierDeck.dynamicCards.PushBack(12);
 
@@ -1975,7 +2008,8 @@ import class CR4GwintManager extends IGameSystem
 			MousesackDeck.dynamicCardRequirements.PushBack(diff14);
 			MousesackDeck.dynamicCards.PushBack(2); 
 			MousesackDeck.dynamicCardRequirements.PushBack(diff14);
-			MousesackDeck.dynamicCards.PushBack(7);
+			MousesackDeck.dynamicCards.PushBack(26);
+			MousesackDeck.dynamicCards.PushBack(28); 
 
 
 			MousesackDeck.specialCard = 403; 
@@ -2018,7 +2052,7 @@ import class CR4GwintManager extends IGameSystem
 			if (difficulty == 3)
 			{
 				ShaniDeck.cardIndices.PushBack(2); 
-				ShaniDeck.cardIndices.PushBack(10); 	
+				ShaniDeck.cardIndices.PushBack(27); 	
 				ShaniDeck.cardIndices.PushBack(300);	
 				ShaniDeck.cardIndices.PushBack(301);	
 			}
@@ -2049,7 +2083,8 @@ import class CR4GwintManager extends IGameSystem
 			ShaniDeck.dynamicCardRequirements.PushBack(diff14);
 			ShaniDeck.dynamicCards.PushBack(15); 
 			ShaniDeck.dynamicCardRequirements.PushBack(diff14);
-			ShaniDeck.dynamicCards.PushBack(7); 
+			ShaniDeck.dynamicCards.PushBack(26); 
+			ShaniDeck.dynamicCards.PushBack(28); 
 
 			ShaniDeck.specialCard = 17; 
 			ShaniDeck.leaderIndex = 3005; 
@@ -2086,7 +2121,7 @@ import class CR4GwintManager extends IGameSystem
 			{
 				OlgierdDeck.cardIndices.PushBack(0); 
 				OlgierdDeck.cardIndices.PushBack(1); 
-				OlgierdDeck.cardIndices.PushBack(10);   
+				OlgierdDeck.cardIndices.PushBack(27);   
 			}
 
 			OlgierdDeck.cardIndices.PushBack(401);	
@@ -2114,7 +2149,8 @@ import class CR4GwintManager extends IGameSystem
 			OlgierdDeck.dynamicCardRequirements.PushBack(diff14);
 			OlgierdDeck.dynamicCards.PushBack(2); 
 			OlgierdDeck.dynamicCardRequirements.PushBack(diff14);
-			OlgierdDeck.dynamicCards.PushBack(7); 
+			OlgierdDeck.dynamicCards.PushBack(26); 
+			OlgierdDeck.dynamicCards.PushBack(28); 
 
 			OlgierdDeck.specialCard = 478; 
 			OlgierdDeck.leaderIndex = 4005;
@@ -2188,7 +2224,8 @@ import class CR4GwintManager extends IGameSystem
 			GamblerDeck.dynamicCardRequirements.PushBack(diff6);
 			GamblerDeck.dynamicCards.PushBack(11); 
 			GamblerDeck.dynamicCardRequirements.PushBack(diff8);
-			GamblerDeck.dynamicCards.PushBack(7); 
+			GamblerDeck.dynamicCards.PushBack(26); 
+			GamblerDeck.dynamicCards.PushBack(28); 
 
 			GamblerDeck.specialCard = 18; 
 			GamblerDeck.leaderIndex = 2005;
@@ -2226,7 +2263,7 @@ import class CR4GwintManager extends IGameSystem
 				HalflingsDeck.cardIndices.PushBack(1); 
 				HalflingsDeck.cardIndices.PushBack(102);	
 				HalflingsDeck.cardIndices.PushBack(101);	
-				HalflingsDeck.cardIndices.PushBack(10);		
+				HalflingsDeck.cardIndices.PushBack(27);		
 			}
 
 			HalflingsDeck.cardIndices.PushBack(116); 	
@@ -2247,7 +2284,8 @@ import class CR4GwintManager extends IGameSystem
 			HalflingsDeck.dynamicCardRequirements.PushBack(diff8);	
 			HalflingsDeck.dynamicCards.PushBack(11); 				
 			HalflingsDeck.dynamicCardRequirements.PushBack(diff8);	
-			HalflingsDeck.dynamicCards.PushBack(7); 				
+			HalflingsDeck.dynamicCards.PushBack(26); 				
+			HalflingsDeck.dynamicCards.PushBack(28); 
 			HalflingsDeck.dynamicCardRequirements.PushBack(diff8);	
 			HalflingsDeck.dynamicCards.PushBack(15); 				
 			HalflingsDeck.dynamicCardRequirements.PushBack(diff10);	
@@ -2283,7 +2321,7 @@ import class CR4GwintManager extends IGameSystem
 				CircusGwentAddictDeck.cardIndices.PushBack(2); 
 				CircusGwentAddictDeck.cardIndices.PushBack(367);	
 				CircusGwentAddictDeck.cardIndices.PushBack(300);	
-				CircusGwentAddictDeck.cardIndices.PushBack(10); 	
+				CircusGwentAddictDeck.cardIndices.PushBack(27); 	
 			}
 			if (difficulty == 3)
 			{
@@ -2320,8 +2358,8 @@ import class CR4GwintManager extends IGameSystem
 			CircusGwentAddictDeck.dynamicCardRequirements.PushBack(diff14);
 			CircusGwentAddictDeck.dynamicCards.PushBack(2); 
 			CircusGwentAddictDeck.dynamicCardRequirements.PushBack(diff14);
-			CircusGwentAddictDeck.dynamicCards.PushBack(7); 
-
+			CircusGwentAddictDeck.dynamicCards.PushBack(26); 
+			CircusGwentAddictDeck.dynamicCards.PushBack(28); 
 			CircusGwentAddictDeck.specialCard = 368; 
 			CircusGwentAddictDeck.leaderIndex = 3005;
 			enemyDecks.PushBack(CircusGwentAddictDeck);
@@ -2419,7 +2457,7 @@ import class CR4GwintManager extends IGameSystem
 			NKNormal.dynamicCardRequirements.PushBack(diff13);
 			NKNormal.dynamicCards.PushBack(11); 
 			NKNormal.dynamicCardRequirements.PushBack(diff15);
-			NKNormal.dynamicCards.PushBack(10); 
+			NKNormal.dynamicCards.PushBack(27); 
 
 			NKNormal.specialCard = -1; 
 			NKNormal.leaderIndex = 1002;
@@ -2442,18 +2480,20 @@ import class CR4GwintManager extends IGameSystem
 			{
 				NKHard.cardIndices.PushBack(1); 
 				NKHard.cardIndices.PushBack(2); 
-				NKHard.cardIndices.PushBack(7); 
+				NKHard.cardIndices.PushBack(26); 
+				NKHard.cardIndices.PushBack(28); 
 				NKHard.cardIndices.PushBack(9); 
-				NKHard.cardIndices.PushBack(10); 
+				NKHard.cardIndices.PushBack(27); 
 			}
 			if (difficulty == 3)
 			{
 				NKHard.cardIndices.PushBack(1); 
 				NKHard.cardIndices.PushBack(2); 
-				NKHard.cardIndices.PushBack(7);  
+				NKHard.cardIndices.PushBack(26);  
+				NKHard.cardIndices.PushBack(28); 
 				NKHard.cardIndices.PushBack(15); 
 				NKHard.cardIndices.PushBack(9); 
-				NKHard.cardIndices.PushBack(10); 
+				NKHard.cardIndices.PushBack(27); 
 			}
 
 			NKHard.cardIndices.PushBack(11); 
@@ -2578,7 +2618,8 @@ import class CR4GwintManager extends IGameSystem
 			NilfNormal.dynamicCardRequirements.PushBack(diff13);
 			NilfNormal.dynamicCards.PushBack(202);
 			NilfNormal.dynamicCardRequirements.PushBack(diff15);
-			NilfNormal.dynamicCards.PushBack(7); 
+			NilfNormal.dynamicCards.PushBack(26); 
+			NilfNormal.dynamicCards.PushBack(28); 
 
 			NilfNormal.specialCard = -1; 
 			NilfNormal.leaderIndex = 2002;
@@ -2749,7 +2790,7 @@ import class CR4GwintManager extends IGameSystem
 			ScoiaNormal.dynamicCardRequirements.PushBack(diff13);
 			ScoiaNormal.dynamicCards.PushBack(15); 
 			ScoiaNormal.dynamicCardRequirements.PushBack(diff15);
-			ScoiaNormal.dynamicCards.PushBack(10); 
+			ScoiaNormal.dynamicCards.PushBack(27); 
 
 			ScoiaNormal.specialCard = -1; 
 			ScoiaNormal.leaderIndex = 3002;
@@ -2770,15 +2811,17 @@ import class CR4GwintManager extends IGameSystem
 			}
 			if (difficulty == 2)
 			{
-				ScoiaHard.cardIndices.PushBack(7);  
-				ScoiaHard.cardIndices.PushBack(10); 
+				ScoiaHard.cardIndices.PushBack(26);  
+				ScoiaHard.cardIndices.PushBack(28); 
+				ScoiaHard.cardIndices.PushBack(27); 
 				ScoiaHard.cardIndices.PushBack(301);	
 				ScoiaHard.cardIndices.PushBack(302);	
 			}
 			if (difficulty == 3)
 			{
-				ScoiaHard.cardIndices.PushBack(7);  
-				ScoiaHard.cardIndices.PushBack(10); 
+				ScoiaHard.cardIndices.PushBack(26);  
+				ScoiaHard.cardIndices.PushBack(28); 
+				ScoiaHard.cardIndices.PushBack(27); 
 				ScoiaHard.cardIndices.PushBack(301);	
 				ScoiaHard.cardIndices.PushBack(302);	
 				ScoiaHard.cardIndices.PushBack(9); 
@@ -2879,7 +2922,8 @@ import class CR4GwintManager extends IGameSystem
 				NMLNormal.cardIndices.PushBack(2); 	
 				NMLNormal.cardIndices.PushBack(0); 	
 				NMLNormal.cardIndices.PushBack(0); 	
-				NMLNormal.cardIndices.PushBack(7);  
+				NMLNormal.cardIndices.PushBack(26);  
+				NMLNormal.cardIndices.PushBack(28); 
 				NMLNormal.cardIndices.PushBack(9);  
 				NMLNormal.cardIndices.PushBack(400); 
 			}
@@ -3047,7 +3091,8 @@ private function SetupAIDeckDefinitionsSkel()
 			}
 			if (difficulty == 3)
 			{
-				SkelNormal.cardIndices.PushBack(7);  
+				SkelNormal.cardIndices.PushBack(26);  
+				SkelNormal.cardIndices.PushBack(28); 
 				SkelNormal.cardIndices.PushBack(502); 
 				SkelNormal.cardIndices.PushBack(17); 
 				SkelNormal.cardIndices.PushBack(509); 
@@ -3076,7 +3121,7 @@ private function SetupAIDeckDefinitionsSkel()
 			SkelNormal.dynamicCardRequirements.PushBack(diff13);
 			SkelNormal.dynamicCards.PushBack(15); 
 			SkelNormal.dynamicCardRequirements.PushBack(diff15);
-			SkelNormal.dynamicCards.PushBack(10); 
+			SkelNormal.dynamicCards.PushBack(27); 
 
 			SkelNormal.specialCard = -1; 
 			SkelNormal.leaderIndex = 5002;
@@ -3098,8 +3143,9 @@ private function SetupAIDeckDefinitionsSkel()
 			}
 			if (difficulty == 2)
 			{
-				SkelHard.cardIndices.PushBack(7);  
-				SkelHard.cardIndices.PushBack(10); 
+				SkelHard.cardIndices.PushBack(26);  
+				SkelHard.cardIndices.PushBack(28); 
+				SkelHard.cardIndices.PushBack(27); 
 				SkelHard.cardIndices.PushBack(20);	
 			}
 			if (difficulty == 3)
@@ -3214,11 +3260,12 @@ private function SetupAIDeckDefinitionsSkel()
 			NKTournament.dynamicCardRequirements.PushBack(diff8);	
 			NKTournament.dynamicCards.PushBack(11); 				
 			NKTournament.dynamicCardRequirements.PushBack(diff8);	
-			NKTournament.dynamicCards.PushBack(7); 				
+			NKTournament.dynamicCards.PushBack(26); 				
+			NKTournament.dynamicCards.PushBack(28); 
 			NKTournament.dynamicCardRequirements.PushBack(diff8);	
 			NKTournament.dynamicCards.PushBack(15); 				
 			NKTournament.dynamicCardRequirements.PushBack(diff10);	
-			NKTournament.dynamicCards.PushBack(10);
+			NKTournament.dynamicCards.PushBack(27);
 			NKTournament.dynamicCardRequirements.PushBack(diff10);	
 			NKTournament.dynamicCards.PushBack(9); 				
 			
@@ -3277,7 +3324,8 @@ private function SetupAIDeckDefinitionsSkel()
 			NilfTournament.dynamicCardRequirements.PushBack(diff6);
 			NilfTournament.dynamicCards.PushBack(11);
 			NilfTournament.dynamicCardRequirements.PushBack(diff8);
-			NilfTournament.dynamicCards.PushBack(7); 
+			NilfTournament.dynamicCards.PushBack(26); 
+			NilfTournament.dynamicCards.PushBack(28); 
 			NilfTournament.dynamicCardRequirements.PushBack(diff10);
 			NilfTournament.dynamicCards.PushBack(9);
 
@@ -3340,9 +3388,10 @@ private function SetupAIDeckDefinitionsSkel()
 			ScoiaTournament.dynamicCardRequirements.PushBack(diff8);
 			ScoiaTournament.dynamicCards.PushBack(14);
 			ScoiaTournament.dynamicCardRequirements.PushBack(diff10);
-			ScoiaTournament.dynamicCards.PushBack(7); 
+			ScoiaTournament.dynamicCards.PushBack(26); 
+			ScoiaTournament.dynamicCards.PushBack(28); 
 			ScoiaTournament.dynamicCardRequirements.PushBack(diff10);
-			ScoiaTournament.dynamicCards.PushBack(10);
+			ScoiaTournament.dynamicCards.PushBack(27);
 
 
 			ScoiaTournament.specialCard = -1; 
@@ -3399,7 +3448,8 @@ private function SetupAIDeckDefinitionsSkel()
 			NMLTournament.dynamicCardRequirements.PushBack(diff8);	
 			NMLTournament.dynamicCards.PushBack(13); 				
 			NMLTournament.dynamicCardRequirements.PushBack(diff10);	
-			NMLTournament.dynamicCards.PushBack(7); 				
+			NMLTournament.dynamicCards.PushBack(26); 				
+			NMLTournament.dynamicCards.PushBack(28); 
 			NMLTournament.dynamicCardRequirements.PushBack(diff10);	
 			NMLTournament.dynamicCards.PushBack(16); 				
 			
@@ -3465,9 +3515,10 @@ private function SetupAIDeckDefinitionsSkel()
 			ScoiaTournament2.dynamicCardRequirements.PushBack(diff8);
 			ScoiaTournament2.dynamicCards.PushBack(14);
 			ScoiaTournament2.dynamicCardRequirements.PushBack(diff10);
-			ScoiaTournament2.dynamicCards.PushBack(7); 
+			ScoiaTournament2.dynamicCards.PushBack(26); 
+			ScoiaTournament2.dynamicCards.PushBack(28); 
 			ScoiaTournament2.dynamicCardRequirements.PushBack(diff10);
-			ScoiaTournament2.dynamicCards.PushBack(10);
+			ScoiaTournament2.dynamicCards.PushBack(27);
 
 
 			ScoiaTournament2.specialCard = -1; 
@@ -3521,7 +3572,8 @@ private function SetupAIDeckDefinitionsSkel()
 			NMLTournament2.dynamicCardRequirements.PushBack(diff6);	
 			NMLTournament2.dynamicCards.PushBack(15); 				
 			NMLTournament2.dynamicCardRequirements.PushBack(diff10);	
-			NMLTournament2.dynamicCards.PushBack(7); 				
+			NMLTournament2.dynamicCards.PushBack(26); 				
+			NMLTournament2.dynamicCards.PushBack(28); 
 			
 			NMLTournament2.specialCard = 401; 	
 			NMLTournament2.leaderIndex = 4004; 
@@ -3579,11 +3631,12 @@ private function SetupAIDeckDefinitionsSkel()
 			NKTournament2.dynamicCardRequirements.PushBack(diff8);	
 			NKTournament2.dynamicCards.PushBack(11); 				
 			NKTournament2.dynamicCardRequirements.PushBack(diff8);	
-			NKTournament2.dynamicCards.PushBack(7); 				
+			NKTournament2.dynamicCards.PushBack(26); 				
+			NKTournament2.dynamicCards.PushBack(28); 
 			NKTournament2.dynamicCardRequirements.PushBack(diff8);	
 			NKTournament2.dynamicCards.PushBack(15); 				
 			NKTournament2.dynamicCardRequirements.PushBack(diff10);	
-			NKTournament2.dynamicCards.PushBack(10);
+			NKTournament2.dynamicCards.PushBack(27);
 			NKTournament2.dynamicCardRequirements.PushBack(diff10);	
 			NKTournament2.dynamicCards.PushBack(9); 				
 			
@@ -3642,7 +3695,8 @@ private function SetupAIDeckDefinitionsSkel()
 			NilfTournament2.dynamicCardRequirements.PushBack(diff6);
 			NilfTournament2.dynamicCards.PushBack(11);
 			NilfTournament2.dynamicCardRequirements.PushBack(diff8);
-			NilfTournament2.dynamicCards.PushBack(7); 
+			NilfTournament2.dynamicCards.PushBack(26); 
+			NilfTournament2.dynamicCards.PushBack(28); 
 			NilfTournament2.dynamicCardRequirements.PushBack(diff10);
 			NilfTournament2.dynamicCards.PushBack(9);
 			NilfTournament2.specialCard = -1; 
@@ -3665,8 +3719,9 @@ private function SetupAIDeckDefinitionsSkel()
 			}
 			else
 			{
-				SkelTournament2.cardIndices.PushBack(10); 
-				SkelTournament2.cardIndices.PushBack(7);  
+				SkelTournament2.cardIndices.PushBack(27); 
+				SkelTournament2.cardIndices.PushBack(26);  
+				SkelTournament2.cardIndices.PushBack(28); 
 				SkelTournament2.cardIndices.PushBack(17);	
 				SkelTournament2.cardIndices.PushBack(504); 
 				SkelTournament2.cardIndices.PushBack(509);	
@@ -3958,6 +4013,10 @@ private function SetupAIDeckDefinitionsSkel()
 			case 'gwint_card_cow':					return 20;
 			case 'gwint_card_lady_of_the_lake':		return 24;
 			case 'gwint_card_visenna':				return 25;
+			case 'gwint_card_gog_geralt':           return 26;
+			case 'gwint_card_gog_ciri':             return 27;
+			case 'gwint_card_roach':                return 28;
+			
 			default: return 0;
 		}
 	}

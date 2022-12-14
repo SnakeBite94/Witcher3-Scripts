@@ -138,8 +138,17 @@ class CR4HudModuleBuffs extends CR4HudModuleBase
 						oilEffect = (W3Effect_Oil)effectArray[ i ];
 						if ( oilEffect )
 						{
-							initialDuration = oilEffect.GetAmmoMaxCount();
-							duration		= oilEffect.GetAmmoCurrentCount();
+							
+							if (oilEffect.GetAmmoCurrentCount() > 0 && GetWitcherPlayer().CanUseSkill(S_Alchemy_s06) && GetWitcherPlayer().GetSkillLevel(S_Alchemy_s06) > 2)
+							{
+								initialDuration = oilEffect.GetAmmoMaxCount();
+								duration		= oilEffect.GetAmmoMaxCount();
+							}
+							else
+							{
+								initialDuration = oilEffect.GetAmmoMaxCount();
+								duration		= oilEffect.GetAmmoCurrentCount();
+							}
 						}
 					}					
 					else if( effectType == EET_Aerondight )
@@ -270,6 +279,9 @@ class CR4HudModuleBuffs extends CR4HudModuleBase
 		var buffState				: int;
 		var format					: int;
 		var quenBuff 				: W3Effect_BasicQuen;
+		
+		
+		var isOilInfinite : bool;
 
 		l_flashArray = GetModuleFlashValueStorage()().CreateTempFlashArray();
 		for(i = 0; i < Min(buffDisplayLimit,_currentEffects.Size()); i += 1) 
@@ -291,7 +303,11 @@ class CR4HudModuleBuffs extends CR4HudModuleBase
 
 				effectType = _currentEffects[i].GetEffectType();
 
-				if ( effectType == EET_Oil && thePlayer.IsSkillEquipped( S_Alchemy_s06 ) )
+				
+				if(thePlayer.IsSkillEquipped( S_Alchemy_s06 ) && GetWitcherPlayer().CanUseSkill(S_Alchemy_s06) && GetWitcherPlayer().GetSkillLevel(S_Alchemy_s06) > 2)
+					isOilInfinite = true;
+				
+				if ( effectType == EET_Oil && isOilInfinite )
 				{
 					
 					format = 0;
@@ -330,8 +346,19 @@ class CR4HudModuleBuffs extends CR4HudModuleBase
 					oilEffect = (W3Effect_Oil)_currentEffects[i];
 					if ( oilEffect )
 					{
-						l_flashObject.SetMemberFlashNumber("duration",        oilEffect.GetAmmoCurrentCount() * 1.0 );
-						l_flashObject.SetMemberFlashNumber("initialDuration", oilEffect.GetAmmoMaxCount() 	  * 1.0 );
+						
+						if (oilEffect.GetAmmoCurrentCount() > 0 && isOilInfinite)
+						{
+							l_flashObject.SetMemberFlashNumber("duration",        oilEffect.GetAmmoMaxCount() 	  * 1.0 );
+							l_flashObject.SetMemberFlashNumber("initialDuration", oilEffect.GetAmmoMaxCount() 	  * 1.0 );
+							l_flashObject.SetMemberFlashInt("format", 3);
+						}
+						
+						else
+						{
+							l_flashObject.SetMemberFlashNumber("duration",        oilEffect.GetAmmoCurrentCount() * 1.0 );
+							l_flashObject.SetMemberFlashNumber("initialDuration", oilEffect.GetAmmoMaxCount() 	  * 1.0 );
+						}
 					}
 				}
 				else if( effectType == EET_Aerondight )

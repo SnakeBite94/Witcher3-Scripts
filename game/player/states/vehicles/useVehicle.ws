@@ -1590,6 +1590,9 @@ state CastSign in W3VehicleCombatManager
 		if( animEventName == 'cast_begin' )
 		{
 			witcher.ProcessSignEvent( 'horse_cast_begin' );
+			
+			
+			thePlayer.PlayBattleCry( 'ChillOutHorse', 0.45f, true, true );
 		}
 	}
 	

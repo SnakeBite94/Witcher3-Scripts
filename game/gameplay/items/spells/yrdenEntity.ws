@@ -22,7 +22,7 @@ statemachine class W3YrdenEntity extends W3SignEntity
 	editable var projDestroyFxEntTemplate : CEntityTemplate;
 	editable var runeTemplates	: array< CEntityTemplate >;
 
-	protected var validTargetsInArea, allActorsInArea : array< CActor >;
+	public var validTargetsInArea, allActorsInArea : array< CActor >; 
 	protected var flyersInArea	: array< CNewNPC >;
 	
 	protected var trapDuration	: float;
@@ -32,6 +32,8 @@ statemachine class W3YrdenEntity extends W3SignEntity
 	
 	public var notFromPlayerCast : bool;
 	public var fxEntities : array< CEntity >;
+	
+	public var wasSignSupercharged : bool; 
 	
 	default skillEnum = S_Magic_3;
 
@@ -120,6 +122,8 @@ statemachine class W3YrdenEntity extends W3SignEntity
 		var chargesAtt, trapDurationAtt : SAbilityAttributeValue;
 	
 		super.GetSignStats();
+		
+		wasSignSupercharged = GetWitcherPlayer().IsSuperchargedSign();	
 		
 		chargesAtt = owner.GetSkillAttributeValue(skillEnum, 'charge_count', false, true);
 		trapDurationAtt = owner.GetSkillAttributeValue(skillEnum, 'trap_duration', false, true);
@@ -936,6 +940,11 @@ state YrdenSlowdown in W3YrdenEntity extends Active
 		var casterPlayer : CR4Player;
 		var npc : CNewNPC;
 		
+		
+		var sp : SAbilityAttributeValue;
+		var multiplier : float;
+		
+		
 		casterActor = caster.GetActor();
 		casterPlayer = caster.GetPlayer();
 		
@@ -955,14 +964,34 @@ state YrdenSlowdown in W3YrdenEntity extends Active
 		params.effectValue.valueAdditive = ClampF( params.effectValue.valueAdditive, min, max );
 		
 		
-		if(thePlayer.CanUseSkill(S_Magic_s11))
+		
+		
+		if(thePlayer.CanUseSkill(S_Magic_s11) || parent.wasSignSupercharged)
+		
 		{
 			
 			paramsDrain = params;
 			paramsDrain.customAbilityName = '';
+			
+			
+			if ( parent.wasSignSupercharged )
+				paramsDrain.effectValue = thePlayer.GetSkillAttributeValue(S_Magic_s11, 'direct_damage_per_sec', false, true) * 3;
+			else
+				paramsDrain.effectValue = thePlayer.GetSkillAttributeValue(S_Magic_s11, 'direct_damage_per_sec', false, true) * thePlayer.GetSkillLevel(S_Magic_s11);
+			
+			
 			paramsDrain.effectType = EET_YrdenHealthDrain;
+			
+			
+			sp = GetWitcherPlayer().GetTotalSignSpellPower(S_Magic_3);
+			multiplier = sp.valueMultiplicative / 100;
+			multiplier = ClampF(multiplier, 0.0, 0.15);
+			
+			paramsDrain.effectValue = thePlayer.GetSkillAttributeValue(S_Magic_s11, 'direct_damage_per_sec', false, true) * thePlayer.GetSkillLevel(S_Magic_s11);
+			paramsDrain.effectValue.valueMultiplicative += multiplier;
+			
 		}
-						
+		
 		while(true)
 		{
 			
@@ -985,7 +1014,10 @@ state YrdenSlowdown in W3YrdenEntity extends Active
 					parent.validTargetsInArea[i].AddEffectCustom(params);			
 				
 				
-				if(thePlayer.CanUseSkill(S_Magic_s11))
+				
+				
+				if(thePlayer.CanUseSkill(S_Magic_s11) || parent.wasSignSupercharged)
+				
 				{
 					parent.validTargetsInArea[i].AddEffectCustom(paramsDrain);
 				}

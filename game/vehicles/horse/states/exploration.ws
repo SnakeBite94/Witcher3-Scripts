@@ -78,6 +78,9 @@ state Exploration in W3HorseComponent
 		theInput.RegisterListener( this, 'OnHorseJump', 'HorseJump' );
 		theInput.RegisterListener( this, 'OnHorseDismountKeyboard', 'HorseDismount' );
 		
+		
+		theInput.RegisterListener( this, 'OnHorseKick', 'HorseKick' );
+
 		parentActor = (CActor)(parent.GetEntity());
 		mac = parentActor.GetMovingAgentComponent();
 		
@@ -120,8 +123,43 @@ state Exploration in W3HorseComponent
 		theInput.UnregisterListener( this, 'Stop' );
 		theInput.UnregisterListener( this, 'HorseJump' );
 		theInput.UnregisterListener( this, 'HorseDismount' );
+		
+		
+		theInput.UnregisterListener( this, 'HorseKick' );
+		
 		theGame.GetGuiManager().DisableHudHoldIndicator();
 	}
+	
+	
+	private var mountingEnded, canDoKickAnim, wantsToKick : bool;	
+	private var mountingAnimationTime : float;
+	private var kickTimer : float;
+	
+	event OnHorseKick( action : SInputAction )
+	{
+		if( IsPressed( action ) )
+		{
+			if( canDoKickAnim && !dismountRequest && theInput.GetActionValue('EnablePhotoMode_Step2') == 0.f )
+			{
+				wantsToKick = true;
+				kickTimer = 0.1f;
+			}
+		}
+	}
+	
+	private function DoHorseKick()
+	{
+		var camera 	: CCustomCamera;
+	
+		camera = (CCustomCamera)theCamera.GetTopmostCameraObject();
+		if(	AbsF(AngleDistance(camera.GetHeading(), thePlayer.GetHeading())) > 90)
+			parent.GenerateEvent('kick');
+		else
+			parent.GenerateEvent('rearing');
+			
+		wantsToKick = false;
+	}
+	
 	
 	
 	
@@ -146,7 +184,7 @@ state Exploration in W3HorseComponent
 		}
 	}
 	
-	private function ToggleSpeedLock( lockName : name, toggle : bool )
+	public function ToggleSpeedLock( lockName : name, toggle : bool )
 	{
 		if( toggle )
 		{
@@ -192,6 +230,34 @@ state Exploration in W3HorseComponent
 	{
 		parent.OnTick( dt );
 		
+		
+		parent.ShouldTickInIdle();
+		
+		
+		
+		if(mountingEnded)
+		{
+			mountingAnimationTime += dt;
+			if(mountingAnimationTime > 1.f)
+			{
+				mountingAnimationTime = 0.f;
+				mountingEnded = false;
+				canDoKickAnim = true;
+			}			
+		}
+		if(kickTimer >= 0.f) kickTimer -= dt;
+		if( wantsToKick && kickTimer < 0.f )
+		{
+			if( !thePlayer.GetPhotoModeHorseKick() )
+			{
+				DoHorseKick();
+			}
+			wantsToKick = false;			
+			thePlayer.SetPhotoModeHorseKick(false);
+		}
+		
+		
+		
 		if( dismountRequest || thePlayer.IsActionAllowed( EIAB_Movement ) )
 		{
 			UpdateLogic( dt );
@@ -216,17 +282,29 @@ state Exploration in W3HorseComponent
 	
 	event OnMountStarted( entity : CEntity, vehicleSlot : EVehicleSlot )
 	{
+		
+		mountingEnded = false;
+		canDoKickAnim = false;
+	
 		parent.OnMountStarted( entity, vehicleSlot );
 		LeaveThisState();
 	}
 	
 	event OnMountFinished( entity : CEntity )
-	{
+	{	
+		
+		mountingEnded = true;
+		canDoKickAnim = false;
+	
 		parent.OnMountFinished(entity);
 	}
 	
 	event OnDismountStarted( entity : CEntity )
-	{
+	{	
+		
+		mountingEnded = false;
+		canDoKickAnim = false;
+	
 		thePlayer.SetBehaviorVariable( 'playerWouldLikeToMove', 0.0f );
 		UnregisterInput();
 		parent.OnDismountStarted( entity );
@@ -495,11 +573,14 @@ state Exploration in W3HorseComponent
 	
 	
 	
+	
+	private var shouldBlendFromTurning : bool;	
+	
 	private const var INPUTMAG_TROT : float;
 	private const var INPUTMAG_WALK : float;
 	
-	default INPUTMAG_TROT = 0.9;
-	default INPUTMAG_WALK = 0.6;
+	default INPUTMAG_TROT = 0.75; 
+	default INPUTMAG_WALK = 0.45; 
 	
 	private final function ProcessControlInput( lr : float, fb : float, timeDelta : float, useLocalSpace : bool )
 	{
@@ -513,6 +594,8 @@ state Exploration in W3HorseComponent
 		var prevDir	: float;
 		var steeringCorrection : bool;
 		var stickInput : bool;
+		
+		var keyboardWalkState : int;	
 		
 		if( ( !thePlayer.GetIsMovable() && !dismountRequest ) || speedRestriction == MIN_SPEED )
 		{
@@ -584,6 +667,11 @@ state Exploration in W3HorseComponent
 			
 			dir = AngleNormalize180( dir ) / 180.f;
 			
+			
+			if(isReversing)
+				dir = 0.f;
+			
+			
 			if( steeringCorrection )
 			{
 				rot = dir * 2 * inputMagnitude;
@@ -615,14 +703,7 @@ state Exploration in W3HorseComponent
 				parent.InternalSetDirection( 0.f );
 			}
 			
-			else if( inputMagnitude >= 0.9 && ( useLocalSpace && AbsF(dir) >= 0.75f ) || ( !useLocalSpace && AbsF( dir ) > 0.75f && AbsF( prevDir ) < 0.17f && destSpeed > MIN_SPEED ) && !parent.IsInCustomSpot() )
-			{
-				parent.InternalSetRotation( 0.f );
-				parent.InternalSetDirection( 0.f );
-				destSpeed = MIN_SPEED;
-				braking = true;
-				PlayVoicesetSlowerHorse();
-			}
+			
 			else if( parent.riderSharedParams.mountStatus != VMS_mountInProgress )
 			{
 				
@@ -651,30 +732,77 @@ state Exploration in W3HorseComponent
 				}
 			}
 			
+			
+			if(isReversing)
+				parent.InternalSetRotation( lr );
+			
+			
 			if( braking )
 			{
 			}
-			else if( !IsSpeedLocked() && stickInput && currSpeed < GALLOP_SPEED && ( currSpeed > MIN_SPEED || AbsF( dir ) < 0.05 ) )
-			{
-				if( currSpeed < TROT_SPEED )
+			
+			else if( !IsSpeedLocked() && stickInput && currSpeed < GALLOP_SPEED && ( currSpeed > MIN_SPEED || AbsF( dir ) < 0.05 || inputMagnitude > 0.1f || shouldBlendFromTurning ) )
+			{	
+				
+				if(theInput.LastUsedPCInput())
 				{
-					if( inputMagnitude > INPUTMAG_TROT )
+					keyboardWalkState = parent.GetHorseWalkState();
+					if( currSpeed < TROT_SPEED )
 					{
-						destSpeed = TROT_SPEED;
+						if( inputMagnitude > INPUTMAG_TROT && keyboardWalkState == 0 )
+						{
+							destSpeed = TROT_SPEED;
+						}
+						else if( inputMagnitude > INPUTMAG_WALK && keyboardWalkState == 1 )
+						{
+							destSpeed = WALK_SPEED;
+						}
+						else
+						{
+							destSpeed = SLOW_SPEED;
+						}
+
+						SpursKick();							
+						speedImpulseTimestamp = theGame.GetEngineTimeAsSeconds();
 					}
-					else if( inputMagnitude > INPUTMAG_WALK )
+					else if(currSpeed < GALLOP_SPEED && keyboardWalkState == 1)
 					{
 						destSpeed = WALK_SPEED;
 					}
-					else
+					else if(currSpeed < GALLOP_SPEED && keyboardWalkState == 2)
 					{
 						destSpeed = SLOW_SPEED;
 					}
-					
-					SpursKick();
-					speedImpulseTimestamp = theGame.GetEngineTimeAsSeconds();
-				}	
-			}			
+				}				
+				else
+				{
+				
+					if( currSpeed <= TROT_SPEED ) 
+					{
+						if( inputMagnitude > INPUTMAG_TROT )
+						{
+							destSpeed = TROT_SPEED;
+						}
+						else if( inputMagnitude > INPUTMAG_WALK )
+						{
+							destSpeed = WALK_SPEED;
+						}
+						else
+						{
+							destSpeed = SLOW_SPEED;
+						}
+						
+						
+						if( destSpeed == TROT_SPEED && currSpeed <= WALK_SPEED && currSpeed != MIN_SPEED )
+						{}
+						else
+							SpursKick();	
+						
+						
+						speedImpulseTimestamp = theGame.GetEngineTimeAsSeconds();
+					}
+				} 
+			}	
 		}
 		else
 		{
@@ -715,6 +843,9 @@ state Exploration in W3HorseComponent
 
 		inputVec = GetInputVectorInCamSpace( stickInputX, stickInputY );
 		angleDistanceBetweenInputAndHorse = AbsF( AngleDistance( VecHeading( inputVec ), parent.GetHeading() ) );
+		
+		
+		shouldBlendFromTurning = false;
 
 		if( !stickInputX && !stickInputY )
 		{
@@ -731,14 +862,30 @@ state Exploration in W3HorseComponent
 		{
 			return true;
 		}
+		
+		else if( !CheckVector(GetHorseVelocity()) && angleDistanceBetweenInputAndHorse < 65.0 )
+		{
+			shouldBlendFromTurning = true;
+			return true;
+		}
+		
 		else if( isStopping )
 		{
 			return true;
 		}
 		else
 			return false;
-
 	}
+	
+	
+	private function CheckVector(vec : Vector) : bool
+	{
+		if(vec.X == 0 && vec.Y == 0 && vec.Z == 0)
+			return true;
+			
+		return false;		
+	}
+	
 	
 	private function ApplyCorrection( inputVector : Vector, out correctedDir, stickInputX : float, stickInputY : float ) : bool
 	{
@@ -894,12 +1041,14 @@ state Exploration in W3HorseComponent
 
 	
 	const var NAVDATA_RADIUS : float;
+	const var NAVDATA_LENGTH_MOD_SLOW : float;	
 	const var NAVDATA_LENGTH_MOD_TROT : float;
 	const var NAVDATA_LENGTH_MOD_GALLOP : float;
 	const var NAVDATA_LENGTH_MOD_CANTER : float;
 	
-	default NAVDATA_RADIUS = 2.0;
-	default NAVDATA_LENGTH_MOD_TROT = 5.0;
+	default NAVDATA_RADIUS = 1.0;			
+	default NAVDATA_LENGTH_MOD_SLOW = 1.5;	
+	default NAVDATA_LENGTH_MOD_TROT = 3.5;	
 	default NAVDATA_LENGTH_MOD_GALLOP = 10.0;
 	default NAVDATA_LENGTH_MOD_CANTER = 15.0;
 	
@@ -912,7 +1061,13 @@ state Exploration in W3HorseComponent
 		startPoint = parent.GetWorldPosition();
 		initialHeading = parent.GetHeadingVector();
 		
-		if( currSpeed <= TROT_SPEED )
+		
+		if( currSpeed < SLOW_SPEED )
+		{
+			lengthMod = NAVDATA_LENGTH_MOD_SLOW;
+		}
+		
+		else if( currSpeed <= TROT_SPEED )
 		{
 			lengthMod = NAVDATA_LENGTH_MOD_TROT;
 		}
@@ -925,29 +1080,42 @@ state Exploration in W3HorseComponent
 			lengthMod = NAVDATA_LENGTH_MOD_CANTER;
 		}
 		
+		
+		if(isReversing)
+			lengthMod *= -1;
+		
+		
 		endPoint = startPoint + initialHeading * lengthMod;
 		
+		
+		
+		
+		
 		if( theGame.GetWorld().NavigationLineTest( startPoint, endPoint, NAVDATA_RADIUS, false, true ) ) 
-		{
+		{		
 			return true;
 		}
+		
+		
 		
 		return false;
 	}
 	
 	const var INCLINATION_MAX_ANGLE : float;
 	const var INCLINATION_BASE_DIST : float;
+	const var INCLINATION_TESTS_COUNT_SLOW : int; 
 	const var INCLINATION_TESTS_COUNT_TROT : int;
 	const var INCLINATION_TESTS_COUNT_GALLOP : int;
 	const var INCLINATION_TESTS_COUNT_CANTER : int;
 	const var INCLINATION_Z_OFFSET : float;
 	
 	default INCLINATION_MAX_ANGLE = 45.0;
-	default INCLINATION_BASE_DIST = 2.0;
-	default INCLINATION_TESTS_COUNT_TROT = 2;
-	default INCLINATION_TESTS_COUNT_GALLOP = 4;
-	default INCLINATION_TESTS_COUNT_CANTER = 6;
-	default INCLINATION_Z_OFFSET = 2.1;
+	default INCLINATION_BASE_DIST = 1.7;		
+	default INCLINATION_TESTS_COUNT_SLOW = 2;	
+	default INCLINATION_TESTS_COUNT_TROT = 3;	
+	default INCLINATION_TESTS_COUNT_GALLOP = 4;	
+	default INCLINATION_TESTS_COUNT_CANTER = 7;	
+	default INCLINATION_Z_OFFSET = 2.1;			
 	
 	private function PerformInclinationTest( stickInputX : float, stickInputY : float ) : bool
 	{
@@ -976,7 +1144,14 @@ state Exploration in W3HorseComponent
 			initialHeading = parent.GetHeadingVector();
 		}
 		
-		if( speed <= TROT_SPEED )
+
+		
+		if( speed < SLOW_SPEED )
+		{
+			iterationsCount = INCLINATION_TESTS_COUNT_SLOW;
+		}
+		
+		else if( speed <= TROT_SPEED )
 		{
 			iterationsCount = INCLINATION_TESTS_COUNT_TROT;
 		}
@@ -994,13 +1169,25 @@ state Exploration in W3HorseComponent
 			iterationsCount =  (int)( MaxF( 2.0, ( iterationsCount / 2 ) ) ); 
 		}
 		
+		
+		
+		if(isReversing)
+		{
+			initialHeading *= -1;
+			iterationsCount = 1;
+		}
+		
+		
+
 		for( i = 0; i < iterationsCount; i += 1 )
 		{
 			rawEndPoint = startPoint + initialHeading * INCLINATION_BASE_DIST;
 			angle = GetInclinationBetweenPoints( startPoint, rawEndPoint, tempEndPoint, INCLINATION_Z_OFFSET );
 			
 			if( angle == 180.0 ) 
+			{
 				return false;
+			}
 			
 			if( i < 2 && !thePlayer.GetIsHorseRacing() ) 
 			{
@@ -1010,7 +1197,9 @@ state Exploration in W3HorseComponent
 				linkingEndPoint.Z += 0.5;
 				
 				if( theGame.GetWorld().StaticTrace( linkingStartPoint, linkingEndPoint, linkingTempPoint, normal, inclinationCheckCollisionGroups ) )
+				{
 					return false;
+				}
 			}
 			
 			if( angle < -INCLINATION_MAX_ANGLE ) 
@@ -1030,32 +1219,14 @@ state Exploration in W3HorseComponent
 				}
 			}
 			
-			switch( i )
-			{
-				case 0:
-					((CActor)parent.GetEntity()).GetVisualDebug().AddSphere( 'c1', 1, tempEndPoint, true, Color( 255, 1, 0 ), 3.0 );
-					break;
-				case 1:
-					((CActor)parent.GetEntity()).GetVisualDebug().AddSphere( 'c2', 1, tempEndPoint, true, Color( 255, 1, 0 ), 3.0 );
-					break;
-				case 2:
-					((CActor)parent.GetEntity()).GetVisualDebug().AddSphere( 'c3', 1, tempEndPoint, true, Color( 255, 1, 0 ), 3.0 );
-					break;
-				case 3:
-					((CActor)parent.GetEntity()).GetVisualDebug().AddSphere( 'c4', 1, tempEndPoint, true, Color( 255, 1, 0 ), 3.0 );
-					break;
-				case 4:
-					((CActor)parent.GetEntity()).GetVisualDebug().AddSphere( 'c5', 1, tempEndPoint, true, Color( 255, 1, 0 ), 3.0 );
-					break;
-				default:
-					break;
-			}
 			
 			
 			
 			startPoint = tempEndPoint;
 		}
-			
+		
+		
+
 		return true;
 	}
 	
@@ -1118,12 +1289,12 @@ state Exploration in W3HorseComponent
 	const var WATER_DIST_GALLOP : float;
 	const var WATER_DIST_CANTER : float;
 	
-	default WATER_MAX_DEPTH = 1.0;
-	default WATER_DIST_TROT = 3.0;
-	default WATER_DIST_GALLOP = 8.0;
-	default WATER_DIST_CANTER = 10.0;
+	default WATER_MAX_DEPTH = 1.25;		
+	default WATER_DIST_TROT = 2.5;		
+	default WATER_DIST_GALLOP = 8.0;	
+	default WATER_DIST_CANTER = 11.0;	
 	
-	private function PerformWaterTest( stickInputX : float, stickInputY : float ) : bool
+	private function PerformWaterTest( stickInputX : float, stickInputY : float,  currentWaterDepth : float  ) : bool
 	{
 		var startPoint, endPoint, cachedEndPoint, bridgeCheckUp, bridgeCheckDown, bridgeCheckOutPoint, normal : Vector;
 		var initialHeading : Vector;
@@ -1131,6 +1302,9 @@ state Exploration in W3HorseComponent
 		var horseHeadingVec : Vector;
 		var waterDepth : float;
 		var speed : float;
+		
+		
+		var addedDepth : float;
 		
 		startPoint = parent.GetWorldPosition();
 		speed = MaxF( currSpeed, destSpeed );
@@ -1146,6 +1320,15 @@ state Exploration in W3HorseComponent
 		{
 			initialHeading = parent.GetHeadingVector();
 		}
+		
+		
+		addedDepth = 0.f;
+		if(isReversing)
+		{
+			initialHeading *= -1;
+			addedDepth = 0.25f;
+		}
+		
 
 		if( speed <= TROT_SPEED )
 		{
@@ -1165,7 +1348,7 @@ state Exploration in W3HorseComponent
 			cachedEndPoint = endPoint;
 			endPoint.Z += WATER_DIST_CANTER + 1.0;
 		}
-		
+
 		
 		bridgeCheckUp = cachedEndPoint;
 		bridgeCheckUp.Z += 5.0;
@@ -1178,13 +1361,18 @@ state Exploration in W3HorseComponent
 		
 		waterDepth = theGame.GetWorld().GetWaterDepth( endPoint, true );
 		
-		if( waterDepth < WATER_MAX_DEPTH || waterDepth == 10000.0 ) 
+		
+		
+		
+		if( waterDepth < WATER_MAX_DEPTH + addedDepth || waterDepth == 10000.0  || waterDepth < AbsF(currentWaterDepth)  ) 
 		{
 			
+			thePlayer.GetVisualDebug().AddText( 'WaterTest', "WaterIsFine", thePlayer.GetWorldPosition() + Vector( 0.f,0.f,2.3f ), true, , Color( 0, 255, 0 ) );
 			return true;
 		}
 		else
 		{
+			thePlayer.GetVisualDebug().AddText( 'WaterTest', "WaterTooDeep", thePlayer.GetWorldPosition() + Vector( 0.f,0.f,2.3f ), true, , Color( 255, 0, 0 ) );
 			
 			
 			
@@ -1589,6 +1777,11 @@ state Exploration in W3HorseComponent
 	
 	
 	
+	
+	private var isReversing : bool;
+	
+	
+	
 	private var rl, fb : float; 
 	private final function UpdateLogic( dt : float )
 	{
@@ -1596,7 +1789,34 @@ state Exploration in W3HorseComponent
 		var player : W3PlayerWitcher;
 		var slidingDisablesControll : bool;
 		
-		if( GetSubmergeDepth() < -2.f || CheckSliding( slidingDisablesControll ) )
+		
+		var waterDepth : float;
+		var lookatPos : Vector;
+		
+		if(!thePlayer.GetIsHorseRacing())
+			parentActor.SetBehaviorVariable( 'isRearingEnabled', 1.0 );
+		else
+			parentActor.SetBehaviorVariable( 'isRearingEnabled', 0.0 );
+			
+		waterDepth = GetSubmergeDepth();
+		parentActor.SetBehaviorVariable( 'submergeDepth', ClampF( waterDepth, -5.0, 5.0 ) );
+		
+		if(waterDepth < -0.6f)
+		{
+			lookatPos = parentActor.GetWorldPosition() + VecConeRand(parentActor.GetHeading(), 0, 5,5) + Vector(0,0,2);
+			
+			parentActor.SetBehaviorVectorVariable( 'lookAtTarget', lookatPos );
+			parentActor.SetBehaviorVariable( 'headWaterDepth', ClampF(-waterDepth/1.5, 0, 1) );
+			parentActor.SetBehaviorVariable( 'lookatOn', 1.0f );
+		}
+		else
+		{
+			parentActor.SetBehaviorVariable( 'headWaterDepth', 0.f );
+		}
+		
+		
+		
+		if( waterDepth < -2.f || CheckSliding( slidingDisablesControll ) )
 			OnHideHorse();
 			
 		if( roadFollowBlock > 0.0 )
@@ -1618,12 +1838,24 @@ state Exploration in W3HorseComponent
 			rl = 0.0;
 			fb = 0.0;
 		}
+
 		
-		parent.inputApplied = rl || fb;
+		
+		
+		
+		
+		
+		isReversing	= false;
+		if(currSpeed == MIN_SPEED && fb < 0.f && parent.lastRider == thePlayer )
+		{
+			isReversing	= true;
+		}	
+		
+		
 		
 		SetTimeoutForCurrentSpeed();
 		MaintainCameraVariables( dt );
-		MaintainGrassCollider();
+		
 		
 		if( ( !useSimpleStaminaManagement && destSpeed > GALLOP_SPEED ) || ( !IsSpeedLocked() && destSpeed > MIN_SPEED && !rl && !fb ) || ( !IsSpeedLocked() && destSpeed > TROT_SPEED ) )
 		{
@@ -1642,7 +1874,11 @@ state Exploration in W3HorseComponent
 		
 		if ( useSimpleStaminaManagement && currSpeed > GALLOP_SPEED && !isFollowingRoad )
 		{
-			actorParent.DrainStamina( ESAT_FixedValue, 3.33f*dt, 1.f, '', 0.f, 1.f );
+			
+			if(thePlayer.GetIsHorseRacing())
+				actorParent.DrainStamina( ESAT_FixedValue, 3.33f*dt, 1.f, '', 0.f, 1.f );
+			else
+				actorParent.DrainStamina( ESAT_FixedValue, 3.33f*dt, 1.f, '', 0.f, 0.45f );
 			
 			if ( actorParent.GetStat( BCS_Stamina ) <= 0.f )
 			{
@@ -1658,10 +1894,10 @@ state Exploration in W3HorseComponent
 			PlayVoicesetSlowerHorse();
 		
 		ProcessControlInput( rl, fb, dt, parent.IsControllableInLocalSpace() || parent.riderSharedParams.mountStatus == VMS_mountInProgress );
-
+		
 		if( !PerformNavDataTest() && !isInJumpAnim ) 
-		{
-			if( PerformInclinationTest( rl, fb ) && PerformWaterTest( rl, fb ) )
+		{		
+			if( PerformInclinationTest( rl, fb ) && PerformWaterTest( rl, fb, waterDepth  ) ) 
 			{
 				ToggleSpeedLock( 'OnNavStop', false );
 				
@@ -1669,25 +1905,41 @@ state Exploration in W3HorseComponent
 				{
 					Jump();
 				}
+				
+				
+				parentActor.SetBehaviorVariable( 'canSlowWalk', 1.0f );
 			}
 			else if( !isFollowingRoad && !parent.ShouldIgnoreTests() )
-			{
+			{			
 				destSpeed = MIN_SPEED;
 				ToggleSpeedLock( 'OnNavStop', true );
-				if( !isRefusingToGo && parent.isInIdle && CanPlayCollisionAnim() && ( rl != 0.0 || fb != 0.0 ) )
+				if( !isRefusingToGo && parent.isInIdle && CanPlayCollisionAnim() && ( rl != 0.0 || fb != 0.0 ) && !isReversing ) 
 				{
 					parent.GenerateEvent( 'WallCollision' );
 					collisionAnimTimestamp = theGame.GetEngineTimeAsSeconds();
 				}	
+				
+				
+				if(parent.lastRider == thePlayer)
+				{
+					parentActor.SetBehaviorVariable( 'canSlowWalk', 0.0f );
+					isReversing = false;
+				}
 			}
 			else
 			{
 				ToggleSpeedLock( 'OnNavStop', false );
+				
+				
+				parentActor.SetBehaviorVariable( 'canSlowWalk', 1.0f );
 			}
 		}
 		else
 		{
 			ToggleSpeedLock( 'OnNavStop', false );
+			
+			
+			parentActor.SetBehaviorVariable( 'canSlowWalk', 1.0f );
 		}
 		
 		if( requestJump )
@@ -1698,7 +1950,7 @@ state Exploration in W3HorseComponent
 			}
 			else
 			{
-				if( !isRefusingToGo && parent.isInIdle && CanPlayCollisionAnim() )
+				if( !isRefusingToGo && parent.isInIdle && CanPlayCollisionAnim() && !isReversing ) 
 				{
 					parent.GenerateEvent( 'WallCollision' );
 					collisionAnimTimestamp = theGame.GetEngineTimeAsSeconds();
@@ -1716,14 +1968,22 @@ state Exploration in W3HorseComponent
 			
 			staminaCooldownTimer += dt;
 			
-			currSpeed = MinF( GALLOP_SPEED, currSpeed );
+			
+			if(!isReversing)
+				currSpeed = MinF( GALLOP_SPEED, currSpeed );			
+			
+			
 			destSpeed = currSpeed;
 		}
 		
 	
 		if ( currSpeed != destSpeed )
 		{
-			currSpeed = destSpeed;
+			
+			if(!isReversing)
+				currSpeed = destSpeed;
+			
+			
 			if ( currSpeed == MIN_SPEED && !parent.isInIdle )
 				isSlowlyStopping = true;
 			else
@@ -1734,10 +1994,27 @@ state Exploration in W3HorseComponent
 		parent.InternalSetSpeed( currSpeed );
 		
 		
+		if(parent.lastRider == thePlayer)
+		{
+			parent.SetDistanceBasedSpeed( VecDistance(cachedPos,parent.GetWorldPosition()) );	
+			cachedPos = parent.GetWorldPosition();
+		
+			if(isReversing)
+				parentActor.SetBehaviorVariable( 'reverse', 1.0f );	
+			else
+				parentActor.SetBehaviorVariable( 'reverse', 0.0f );	
+		}
+		
+		
+
+		
 		CalculateSoundParameters( dt );
 		thePlayer.SoundParameter( "horse_speed", currSpeedSound, 'head' ); 
 		actorParent.SoundParameter( "horse_stamina", actorParent.GetStatPercents( BCS_Stamina ) * 100 ); 
 	}
+	
+	private var cachedPos : Vector; 
+	
 	
 	private var startSlidingTimeStamp : float;
 	private var notSlidingTimeStamp : float;
@@ -1996,8 +2273,8 @@ state Exploration in W3HorseComponent
 					else if(triedDoubleTap)
 					{
 						destSpeed = CANTER_SPEED;
-						
-						SpursKick();
+
+						SpursKick();							
 						
 						if( useSimpleStaminaManagement )
 							ToggleSpeedLock( 'OnGallop', true );
@@ -2008,7 +2285,9 @@ state Exploration in W3HorseComponent
 						if( destSpeed > GALLOP_SPEED )
 						{
 							actorParent = (CActor)parent.GetEntity();
-							actorParent.DrainStamina( ESAT_Sprint, 0.f, speedTimeoutValue );
+							
+							
+							
 							
 							if( actorParent.GetStat( BCS_Stamina ) < 0.1f )
 							{
@@ -2146,7 +2425,8 @@ state Exploration in W3HorseComponent
 	
 	private function DismountHorse() : bool
 	{
-		if ( thePlayer.IsActionAllowed( EIAB_DismountVehicle ) && !IsRiderInCombatAction() && !isInJumpAnim && !dismountRequest && parent.canDismount && !parent.IsInHorseAction() )
+		
+		if ( thePlayer.IsActionAllowed( EIAB_DismountVehicle ) && !theGame.IsDialogOrCutscenePlaying() && theInput.GetContext() != 'Scene' && !theGame.IsFading() && !theGame.IsBlackscreen() && !IsRiderInCombatAction() && !isInJumpAnim && !dismountRequest && parent.canDismount && !parent.IsInHorseAction() )
 		{
 			SetupDismount();
 			return true;
@@ -2161,7 +2441,7 @@ state Exploration in W3HorseComponent
 	
 	public function SetupDismount()
 	{
-		if( ( currSpeed == MIN_SPEED && !isSlowlyStopping ) || isStopping )
+		if( ( currSpeed == MIN_SPEED && !isSlowlyStopping ) || isStopping || isReversing ) 
 		{
 			OnForceStop();
 			parent.user.SetBehaviorVariable('dismountType',0.f);
@@ -2327,7 +2607,8 @@ state Exploration in W3HorseComponent
 	{
 		if( OnCanCanter() )
 		{
-			if( currSpeed < GALLOP_SPEED && destSpeed != CANTER_SPEED )
+			
+			if( currSpeed < GALLOP_SPEED && destSpeed != CANTER_SPEED && !isStopping  )
 				destSpeed = GALLOP_SPEED;
 			
 			ToggleSpeedLock( 'OnGallop', true );
@@ -2336,6 +2617,10 @@ state Exploration in W3HorseComponent
 	
 	private function SpursKick()
 	{
+		
+		if(isReversing)
+			return;
+	
 		if( !IsRiderInCombatAction() && currSpeed < destSpeed )
 		{
 			if( currSpeed != GALLOP_SPEED )
@@ -2354,9 +2639,9 @@ state Exploration in W3HorseComponent
 	private var voicsetFasterTimeStamp : float;
 	private var voicsetSlowerTimeSTamp : float;
 	
-	private const var VOICESET_COOLDOWN 		: float; default VOICESET_COOLDOWN			= 2.0;
-	private const var VOICESET_FASTER_COOLDOWN 	: float; default VOICESET_FASTER_COOLDOWN	= 5.0;
-	private const var VOICESET_SLOWER_COOLDOWN 	: float; default VOICESET_SLOWER_COOLDOWN	= 5.0;
+	private const var VOICESET_COOLDOWN 		: float; default VOICESET_COOLDOWN			= 3.0;  
+	private const var VOICESET_FASTER_COOLDOWN 	: float; default VOICESET_FASTER_COOLDOWN	= 10.0; 
+	private const var VOICESET_SLOWER_COOLDOWN 	: float; default VOICESET_SLOWER_COOLDOWN	= 10.0; 
 	
 	private function PlayVoicesetFasterHorse()
 	{

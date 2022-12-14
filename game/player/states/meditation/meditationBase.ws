@@ -11,7 +11,9 @@ abstract state MeditationBase in W3PlayerWitcher extends ExtendedMovable
 {
 	event OnGameCameraTick( out moveData : SCameraMovementData, dt : float )
 	{
-		DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( -1.5, 0.f, 0.f ), 0.5f, dt );
+		
+		if(!parent.GetExplCamera())
+			DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( -1.5, 0.f, 0.f ), 0.5f, dt );
 
 		return true;
 	}

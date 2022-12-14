@@ -138,4 +138,11 @@ class W3Potion_Cat extends CBaseGameplayEffect
 			DisableCatViewFx( 1.0f );
 		}
 	}
+	
+	
+	public function GetIsScreenFxActive() : bool
+	{
+		return isScreenFxActive;
+	}
+	
 }

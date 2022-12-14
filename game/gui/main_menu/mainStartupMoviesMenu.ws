@@ -63,9 +63,12 @@ class CR4StartupMoviesMenu extends CR4MenuBase
 		
 		if( theGame.GetPlatform() == Platform_PC ) 
 		{
-			movieData.movieName = "gamestart/bumpers/bumpers.usm";
+			movieData.movieName = "gamestart/epilepsy/epilepsy.usm";
 			movieData.isSkipable = true;
 			movieData.showLogo = false;
+			m_MovieData.PushBack(movieData);
+
+			movieData.movieName = "gamestart/bumpers/bumpers.usm";
 			m_MovieData.PushBack(movieData);
 		}
 	}

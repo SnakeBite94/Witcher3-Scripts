@@ -527,6 +527,13 @@ import class CScriptSoundSystem extends CObject
 		
 		LogSound( "Threat rating updated - current value = " + currentThreatRating );
 		lastThreatDampTime = theGame.GetEngineTimeAsSeconds();
+		
+		
+		if(!thePlayer.IsCiri() && !thePlayer.IsHoldingItemInLHand() && currentThreatRating >= 95.0)
+			thePlayer.SetBehaviorVariable('playerDoubleHandSword',1.0f);
+		else
+			thePlayer.SetBehaviorVariable('playerDoubleHandSword',0.0f);
+		
 	}
 
 	function IsMonsterFromMonsterHunt( monster : CActor ) : bool

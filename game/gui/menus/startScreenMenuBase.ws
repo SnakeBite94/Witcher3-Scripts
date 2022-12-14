@@ -89,18 +89,7 @@ class CR4StartScreenMenuBase extends CR4MenuBase
 	
 	public function setStandardtext():void
 	{
-		if (theGame.GetPlatform() == Platform_Xbox1)
-		{
-			m_fxSetText.InvokeSelfOneArg(FlashArgString(GetLocStringByKeyExt("panel_button_press_any_X1")));
-		}
-		else if (theGame.GetPlatform() == Platform_PS4)
-		{
-			m_fxSetText.InvokeSelfOneArg(FlashArgString(GetLocStringByKeyExt("panel_button_press_any_PS4")));
-		}
-		else
-		{
-			m_fxSetText.InvokeSelfOneArg(FlashArgString(GetLocStringByKeyExt("panel_button_press_any")));
-		}
+		m_fxSetText.InvokeSelfOneArg( FlashArgString( GetPlatformLocString( "panel_button_press_any" ) ) );
 	}
 	
 	public function setWaitingText()

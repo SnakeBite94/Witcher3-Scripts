@@ -1805,6 +1805,7 @@ quest function AddItemQuest( targetTag : name, itemName : name, quantity : int, 
 	var skip : bool;
 	var ids : array<SItemUniqueId>;
 	var dm : CDefinitionsManagerAccessor;
+	var manager : CR4GuiManager;
 
 	if(!IsNameValid(targetTag))
 	{
@@ -8718,5 +8719,392 @@ exec function walk( f : float )
 	if ( entity )
 	{
 		entity.SetBehaviorVariable( 'Editor_MoveSpeed', f );
+	}
+}
+
+
+
+quest function VibrateMedallion( activate : bool, vibrateController : bool, optional vibrateStrength : EQuestPadVibrationStrength, optional vibrateDuration : float )
+{
+	var hud : CR4ScriptedHud;
+	var hudWolfHeadModule : CR4HudModuleWolfHead;	
+	var wolfActivation : CScriptedFlashFunction;
+
+	hud = (CR4ScriptedHud)theGame.GetHud();
+	if ( hud )
+	{
+		hudWolfHeadModule = (CR4HudModuleWolfHead)hud.GetHudModule( "WolfHeadModule" );		
+		wolfActivation = hudWolfHeadModule.GetWolfActivator();
+		wolfActivation.InvokeSelfOneArg( FlashArgBool( activate ) );		
+		
+		if(vibrateController)
+		{
+			switch(vibrateStrength)
+			{
+				case EQPVS_VeryLight:
+					theGame.VibrateControllerVeryLight(vibrateDuration);
+					return;
+				case EQPVS_Light:
+					theGame.VibrateControllerLight(vibrateDuration);
+					return;
+				case EQPVS_Hard:
+					theGame.VibrateControllerHard(vibrateDuration);
+					return;
+				case EQPVS_VeryHard:
+					theGame.VibrateControllerVeryHard(vibrateDuration);
+					return;
+				default:
+					return;
+			}
+		}
+	}
+}
+
+
+quest function IsCurrentlyUsingController() : bool
+{
+	return !theInput.LastUsedPCInput();
+}
+
+
+quest function IsCurrentlyUsingAlternateSignCasting() : bool
+{
+	return thePlayer.GetInputHandler().GetIsAltSignCasting();
+}
+
+
+latent quest function AddAndReadBook(bookName : name, optional addToInventoryFirst : bool)
+{
+	var m_bookPopupData : BookPopupFeedback;
+	var playerInv    	: CInventoryComponent;
+	var itemId 			: SItemUniqueId;
+	var i : int;
+	
+	if(IsNameValid(bookName))
+	{
+		playerInv = thePlayer.inv;
+		
+		if(addToInventoryFirst)
+		{
+			playerInv.AddAnItem(bookName, 1, true, true);
+		}		
+		
+		itemId = playerInv.GetItemId(bookName);
+
+		if ( playerInv.IsIdValid(itemId) )
+		{
+			m_bookPopupData = new BookPopupFeedback in thePlayer;
+			m_bookPopupData.SetMessageTitle( GetLocStringByKeyExt(playerInv.GetItemLocalizedNameByUniqueID(itemId)) );
+			m_bookPopupData.SetMessageText( playerInv.GetBookText(itemId) );
+			m_bookPopupData.curInventory = thePlayer.GetInventory();
+			m_bookPopupData.PauseGame = true;
+			m_bookPopupData.singleBookMode = true;
+			m_bookPopupData.bookItemId = itemId;
+			
+			thePlayer.inv.ReadBookByName( bookName, false, true );
+			
+			theGame.RequestMenu('PopupMenu', m_bookPopupData);
+			
+			
+			while ( i < 30 || theGame.IsPausedForReason("Popup") || theGame.GetGuiManager().IsAnyMenu() )
+			{
+				i += 1;
+				SleepOneFrame();
+			}
+			delete m_bookPopupData;
+		}
+	}
+}
+
+
+quest function IsCiriDLCAppearance() : bool
+{
+	var ciri : CActor;
+	var appearance : string;
+
+	ciri = theGame.GetActorByTag( 'ciri' );
+	appearance = NameToString( ciri.GetAppearance() );
+	
+	if( StrEndsWith( appearance, "_dlc" ) )
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+
+quest function PlayerDrinkPotionQuest( itemName : name )
+{
+	var ids : array<SItemUniqueId>;
+	
+	if(IsNameValid(itemName))
+	{
+		ids = thePlayer.inv.AddAnItem(itemName, 1);
+		if(ids.Size() > 0)
+		{
+			GetWitcherPlayer().DrinkPreparedPotion( EES_Potion1, ids[0] );
+		}
+	}
+}
+
+
+quest function IsPlatformPC() : bool
+{
+	if(theGame.GetPlatform() == Platform_PC)
+		return true;
+	else
+		return false;
+}
+
+
+quest function IsPlatformPlaystation() : bool
+{
+	if(theGame.GetPlatform() == Platform_PS4 || theGame.GetPlatform() == Platform_PS5)
+		return true;
+	else
+		return false;
+}
+
+
+quest function IsActorHPAboveX(tag : CName, health : int) : bool
+{
+	var actor : CActor;
+
+	actor = theGame.GetActorByTag( tag );
+	
+	if(actor)
+	{
+		if(actor.GetHealthPercents()*100 > health)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	return false;
+}
+
+
+quest function UpscaleNPCLevel( npcTag : name, levelFromPlayer : int )
+{
+	var npc : CNewNPC;
+	var playerLevel : int;
+	
+	npc = theGame.GetNPCByTag ( npcTag );
+	
+	if ( npc )
+	{
+		playerLevel = thePlayer.GetLevel();
+		npc.SetLevel( playerLevel + levelFromPlayer );
+	}
+}
+
+
+quest function UpscaleNPCHealth( npcTag : name, statType : EBaseCharacterStats )
+{
+	var npc : CNewNPC;
+	var playerLevel : float;
+	var addedHP : float;
+	
+	npc = theGame.GetNPCByTag ( npcTag );
+	
+	if ( npc )
+	{
+		playerLevel = (float)thePlayer.GetLevel();
+		addedHP = 200.0 * playerLevel;
+		npc.abilityManager.SetStatPointMax(statType, npc.GetMaxHealth() + addedHP );
+		npc.SetHealth(npc.GetMaxHealth());
+	}
+}
+
+
+quest function WasMonsterNestDestroyed( tag : name ) : bool
+{
+	var nest : CMonsterNestEntity;
+	
+	nest = (CMonsterNestEntity)theGame.GetEntityByTag( tag );
+	
+	if ( nest )
+	{
+		return nest.wasExploded;
+	}
+	
+	return false;
+}
+
+
+quest function ApplyFractureQuest( tag : name )
+{
+	var comp : CDestructionSystemComponent;
+	var ent : CEntity;
+	
+	ent = theGame.GetEntityByTag( tag );	
+	comp = (CDestructionSystemComponent)ent.GetComponentByClassName('CDestructionSystemComponent');
+	
+	if ( comp )
+	{
+		comp.ApplyFracture();
+	}
+}
+
+
+quest function IsPlayerDoingSpecialAttack(heavy : bool) : bool
+{
+	return thePlayer.IsDoingSpecialAttack(heavy);
+}
+
+
+quest function EredinForceCounter()
+{
+	var eredin : CNewNPC;
+
+	eredin = (CNewNPC)( theGame.GetActorByTag( 'eredin' ) );
+	if( eredin )
+	{
+		eredin.SignalGameplayEvent( 'Counter' );
+	}
+}
+
+
+quest function IsUsingSSD() : bool
+{
+	return theGame.GetDriveType() == DT_SSD;
+}
+
+
+quest function ScaleComponentsQuest ( tag : name, componentNames : array<string>)
+{
+	var entity    : CEntity;
+	var component : CComponent;
+	var i 		  : int;
+	
+	entity = theGame.GetEntityByTag( tag );
+
+	if(entity)
+	{	
+		for(i=0;i<componentNames.Size();i+=1)
+		{
+			component = entity.GetComponent( componentNames[i] );
+			component.SetScale( Vector(0,0,0) );
+		}
+	}
+}
+
+
+quest function CanGeraltUseUndyingSkill() : bool
+{
+	var witcher : W3PlayerWitcher;
+	var healingFactor : float;
+	
+	witcher = GetWitcherPlayer(); 
+	
+	if(!witcher.GetCannotUseUndying() && FloorF(witcher.GetStat(BCS_Focus)) >= 1 && witcher.CanUseSkill(S_Sword_s18) && witcher.HasBuff(EET_BattleTrance) )
+	{
+		healingFactor = CalculateAttributeValue( witcher.GetSkillAttributeValue(S_Sword_s18, 'healing_factor', false, true) );
+		healingFactor *= witcher.GetStatMax(BCS_Vitality);
+		healingFactor *= witcher.GetStat(BCS_Focus);
+		healingFactor *= 1 + CalculateAttributeValue( witcher.GetSkillAttributeValue(S_Sword_s18, 'healing_bonus', false, true) ) * (witcher.GetSkillLevel(S_Sword_s18) - 1);
+		witcher.ForceSetStat(BCS_Vitality, witcher.GetStatMax(BCS_Vitality));
+		witcher.DrainFocus(witcher.GetStat(BCS_Focus));
+		witcher.RemoveBuff(EET_BattleTrance);
+		witcher.SetCannotUseUndyingSkill(true);
+		witcher.AddTimer('UndyingSkillCooldown', CalculateAttributeValue( witcher.GetSkillAttributeValue(S_Sword_s18, 'trigger_delay', false, true) ), false, , , true);
+
+		return true;
+	}
+
+	return false;
+}
+
+
+quest function NGE_SwapNetflixHelmet()
+{
+	var entity    : CEntity;
+	var component : CComponent;
+	
+	if( !theGame.GetDLCManager().IsDLCEnabled('dlc_020_001') )
+		return;
+	
+	entity = theGame.GetEntityByTag( 'q001_nightmare_netflix_helmet' );
+
+	if(entity)
+	{	
+		component = entity.GetComponent( "c_03_mb__nilfgaard_knight" );
+		component.SetScale( Vector(0,0,0) );
+		
+		component = entity.GetComponent( "c_05_mb__nilfgaard_knight" );
+		component.SetScale( Vector(0,0,0) );
+	
+		component = entity.GetComponent( "netflix_helmet" );
+		component.SetScale( Vector(1.26,1.26,1.26) );
+	}
+}
+
+
+quest function NGE_RepairItems(itemName : name)
+{
+	var inv : CInventoryComponent;
+	var itemMaxDurablity : float;
+	var items : array<SItemUniqueId>;
+	var i : int;
+	
+	inv = thePlayer.GetInventory();
+	if(!inv)
+		return;
+		
+	items = inv.GetItemsByName(itemName);
+		
+	for(i=0;i<items.Size();i+=1)
+	{
+		if(!inv.IsIdValid(items[i]))
+			continue;
+		
+		itemMaxDurablity = inv.GetItemMaxDurability(items[i]);
+		inv.SetItemDurabilityScript ( items[i], itemMaxDurablity );
+	}
+}
+
+
+quest function NGE_NPCDisableLookat(npcTag : name, disableLookats : bool)
+{
+	var i : int;
+	var npcs : array <CNewNPC>;
+	
+	theGame.GetNPCsByTag ( npcTag, npcs );
+	
+	for ( i=0; i<npcs.Size(); i+=1 )
+	{
+		if ( npcs[i] )
+		{
+			npcs[i].disableConstrainLookat = disableLookats;			
+		}
+	}
+}
+
+
+quest function NGE_FinisherEnd()
+{
+	thePlayer.OnFinisherEnd();
+}
+
+
+quest function NGE_NPCAnimationMultiplier(npcTag : name, multiplier : float)
+{
+	var i : int;
+	var npcs : array <CNewNPC>;
+	
+	theGame.GetNPCsByTag ( npcTag, npcs );
+	
+	for ( i=0; i<npcs.Size(); i+=1 )
+	{
+		if ( npcs[i] )
+		{
+			npcs[i].SetAnimationTimeMultiplier(multiplier);		
+		}
 	}
 }

@@ -33,6 +33,13 @@ class W3HorseManager extends CPeristentEntity
 	}
 	
 	
+	public function GetHorseMode() : EHorseMode
+	{
+		return horseMode;
+	}
+	
+	
+	
 	
 	public final function GetShouldHideAllItems() : bool
 	{

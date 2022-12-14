@@ -105,7 +105,7 @@ class CR4DeckBuilderMenu extends CR4GwintBaseMenu
 			gwintManager.testMatch = false;
 			
 			gwintManager.gameRequested = false;
-			thePlayer.SetGwintMinigameState( EMS_End_PlayerLost );
+			thePlayer.SetGwintMinigameState( EMS_End_PlayerLost | EMS_End_PlayerForfeited );
 		}
 		super.OnQuitGameConfirmed();
 	}

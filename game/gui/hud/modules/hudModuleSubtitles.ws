@@ -27,6 +27,9 @@ class CR4HudModuleSubtitles extends CR4HudModuleBase
 		inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
 		configValue = inGameConfigWrapper.GetVarValue('Localization', 'Subtitles');
 		SetEnabled(configValue == "true");
+		
+		
+		subScale = StringToInt(inGameConfigWrapper.GetVarValue('Hud', 'SubtitleScale'));
 	}
 
 	event  OnSubtitleAdded( id : int, speakerNameDisplayText : string, htmlString : string, alternativeUI : bool )
@@ -38,8 +41,14 @@ class CR4HudModuleSubtitles extends CR4HudModuleBase
 		}
 		else
 		{
-			htmlString = ": "  + htmlString;
+			
+			if(speakerNameDisplayText != "" && speakerNameDisplayText != " ")
+				htmlString = ": "  + htmlString;
 		}
+		
+		
+		speakerNameDisplayText = "<font size = '"+ IntToString( 26 + subScale ) + "' >" + speakerNameDisplayText + "</font>";
+		htmlString = "<font size = '"+ IntToString( 26 + subScale ) + "' >" + htmlString + "</font>";
 		
 		if( theGame.isDialogDisplayDisabled )
 		{
@@ -96,6 +105,26 @@ class CR4HudModuleSubtitles extends CR4HudModuleBase
 		
 		return super.UpdateScale( scale, flashModule );
 	}
+	
+	
+	private var subScale : int;
+	default subScale = 0;
+	
+	public function SetSubtitleScale(scale : int)
+	{
+		subScale = scale;
+	}
+}
+
+
+exec function subscale( s : int )
+{
+	var hud : CR4ScriptedHud;
+	var module : CR4HudModuleSubtitles;
+
+	hud = (CR4ScriptedHud)theGame.GetHud();
+	module = (CR4HudModuleSubtitles)hud.GetHudModule("SubtitlesModule");
+	module.SetSubtitleScale( s );
 }
 
 exec function hud_addsub( speaker : string, text : string , optional alternativeUI : bool )

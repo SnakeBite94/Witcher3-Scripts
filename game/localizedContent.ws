@@ -18,6 +18,38 @@ import function GetLocStringByKeyExt( stringKey : string ) : string;
 
 import function FixStringForFont( originalString : string ) : string;
 
+function GetPlatformLocString( stringKey : string, optional fallbackKey : string ) : string
+{
+	var foundString : string;
+	foundString = "";
+
+	switch( theGame.GetPlatform() )
+	{
+		case Platform_PS5:
+			foundString = GetLocStringByKey( stringKey + "_ps5");
+			
+			
+			if( foundString != "" )
+				break;		
+		case Platform_PS4:
+			foundString = GetLocStringByKey( stringKey + "_ps4");
+			break;
+		case Platform_Xbox1:
+		case Platform_Xbox_SCARLETT_ANACONDA:
+		case Platform_Xbox_SCARLETT_LOCKHART:
+			foundString = GetLocStringByKey( stringKey + "_x1");
+			break;
+	}
+	
+	if ( foundString != "" )
+		return foundString;
+		
+	if ( fallbackKey != "" )
+		return GetLocStringByKeyExt( fallbackKey );
+		
+	return GetLocStringByKeyExt( stringKey );
+}
+
 
 function GetItemCategoryLocalisedString(cat : name) : string
 {
@@ -485,6 +517,9 @@ function ReplaceTagsToIcons(s : string) : string
 				icon = GetIconForKey(keys[keyIdx]);
 			}
 		}
+		
+		if(theGame.IsLanguageArabic())
+			icon = icon + " ";
 		
 		
 		if(StrStartsWith(icon, "##"))
@@ -1199,7 +1234,8 @@ function GetPadFileName(type : string) : string
 {
 	var platformPrefix:string;
 	
-	if( theInput.GetLastUsedGamepadType() == IDT_PS4 )
+	if( theInput.GetLastUsedGamepadType() == IDT_PS4 
+		|| theInput.GetLastUsedGamepadType() == IDT_PS5 )
 	{
 		
 		switch(type)

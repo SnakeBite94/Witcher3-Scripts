@@ -38,3 +38,106 @@ class W3Effect_Bleeding extends W3DamageOverTimeEffect
 		}		
 	}
 }
+
+
+
+
+class W3Effect_Bleeding1 extends W3DamageOverTimeEffect
+{	
+	default effectType = EET_Bleeding1;
+	default resistStat = CDS_BleedingRes;
+	
+	event OnEffectAdded(optional customParams : W3BuffCustomParams)
+	{
+		super.OnEffectAdded(customParams);
+		
+		if( target == thePlayer)
+		 Log("");
+	}
+	
+	public function OnDamageDealt(dealtDamage : bool)
+	{
+		
+		if(!dealtDamage)
+		{
+			shouldPlayTargetEffect = false;
+			
+			if(target.IsEffectActive(targetEffectName))
+				StopTargetFX();
+		}
+		else
+		{
+			shouldPlayTargetEffect = true;
+			
+			if(!target.IsEffectActive(targetEffectName))
+				PlayTargetFX();
+		}		
+	}
+}
+
+class W3Effect_Bleeding2 extends W3DamageOverTimeEffect
+{	
+	default effectType = EET_Bleeding2;
+	default resistStat = CDS_BleedingRes;
+	
+	event OnEffectAdded(optional customParams : W3BuffCustomParams)
+	{
+		super.OnEffectAdded(customParams);
+		
+		if( target == thePlayer)
+		 Log("");
+	}
+	
+	public function OnDamageDealt(dealtDamage : bool)
+	{
+		
+		if(!dealtDamage)
+		{
+			shouldPlayTargetEffect = false;
+			
+			if(target.IsEffectActive(targetEffectName))
+				StopTargetFX();
+		}
+		else
+		{
+			shouldPlayTargetEffect = true;
+			
+			if(!target.IsEffectActive(targetEffectName))
+				PlayTargetFX();
+		}		
+	}
+}
+
+class W3Effect_Bleeding3 extends W3DamageOverTimeEffect
+{	
+	default effectType = EET_Bleeding3;
+	default resistStat = CDS_BleedingRes;
+	
+	event OnEffectAdded(optional customParams : W3BuffCustomParams)
+	{
+		super.OnEffectAdded(customParams);
+		
+		if( target == thePlayer)
+		 Log("");
+	}
+	
+	public function OnDamageDealt(dealtDamage : bool)
+	{
+		
+		if(!dealtDamage)
+		{
+			shouldPlayTargetEffect = false;
+			
+			if(target.IsEffectActive(targetEffectName))
+				StopTargetFX();
+		}
+		else
+		{
+			shouldPlayTargetEffect = true;
+			
+			if(!target.IsEffectActive(targetEffectName))
+				PlayTargetFX();
+		}		
+	}
+}
+

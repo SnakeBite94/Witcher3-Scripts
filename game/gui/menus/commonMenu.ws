@@ -761,6 +761,9 @@ class CR4CommonMenu extends CR4MenuBase
 				DefineMenuItem('GlossaryBestiaryMenu', "panel_title_glossary_bestiary",'GlossaryParent');
 				
 				
+				
+				
+				
 				DefineMenuItem('GlossaryTutorialsMenu', "panel_title_glossary_tutorials",'GlossaryParent');
 				DefineMenuItem('GlossaryEncyclopediaMenu', "panel_title_glossary_dictionary",'GlossaryParent');
 				DefineMenuItem('GlossaryBooksMenu', "books_panel_title",'GlossaryParent');
@@ -1657,7 +1660,14 @@ class CR4CommonMenu extends CR4MenuBase
 			l_flashObject = m_flashValueStorage.CreateTempFlashObject();
 			l_flashObject.SetMemberFlashString( "topText", GetLocStringByKeyExt( alchemyEntries[i].panelName ));
 			m_definitionsManager = theGame.GetDefinitionsManager();
-			l_flashObject.SetMemberFlashString( "bottomText", GetLocStringByKeyExt( m_definitionsManager.GetItemLocalisationKeyName( alchemyEntries[i].tag ) ));
+			
+			
+			if(alchemyEntries[i].tag == 'Recipe for Signs Enhancement')
+				l_flashObject.SetMemberFlashString( "bottomText", GetLocStringByKeyExt('item_name_signs_enhancement') );				
+			else
+			
+				l_flashObject.SetMemberFlashString( "bottomText", GetLocStringByKeyExt( m_definitionsManager.GetItemLocalisationKeyName( alchemyEntries[i].tag ) ));
+							
 			StructGFx.PushBackFlashObject(l_flashObject);
 		}
 	}

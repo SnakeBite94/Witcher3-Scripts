@@ -278,6 +278,9 @@ class W3GameEffectManager
 			case EET_PetriPhiltre :				effects[effect] = new W3Potion_PetriPhiltre in this; 				break;
 			case EET_Swallow :					effects[effect] = new W3Potion_Swallow in this; 					break;
 			case EET_TawnyOwl :					effects[effect] = new W3Potion_TawnyOwl in this; 					break;
+			
+			case EET_ReinaldPhiltre :			effects[effect] = new W3Potion_ReinaldPhiltre in this; 				break;		
+			
 			case EET_Thunderbolt :				effects[effect] = new W3Potion_Thunderbolt in this; 				break;
 			case EET_WhiteHoney :				effects[effect] = new W3Potion_WhiteHoney in this; 					break;
 			case EET_WhiteRaffardDecoction :	effects[effect] = new W3Potion_WhiteRaffardDecoction in this; 		break;
@@ -346,6 +349,12 @@ class W3GameEffectManager
 			case EET_StaggerAura :				effects[effect] = new W3StaggerAura in this;						break;
 			case EET_FireAura :					effects[effect] = new W3FireAura in this;							break;
 			case EET_WeakeningAura : 			effects[effect] = new W3WeakeningAura in this;						break;
+			
+			
+			case EET_Bleeding1 :				effects[effect] = new W3Effect_Bleeding1 in this; 					break;
+			case EET_Bleeding2 :				effects[effect] = new W3Effect_Bleeding2 in this; 					break;
+			case EET_Bleeding3 :				effects[effect] = new W3Effect_Bleeding3 in this; 					break;
+			
 			
 			default :
 				found = false;
@@ -647,6 +656,12 @@ function HACK_NO_MEMORY_TO_COMPILE_EffectNameToType_Part1(effectName : name, out
 		case "RagdollEffect" : 								type = EET_Ragdoll; 					break;
 		
 		case "BleedingEffect" : 							type = EET_Bleeding; 					break;
+		
+		case "BleedingEffect1" : 							type = EET_Bleeding1; 					break;
+		case "BleedingEffect2" : 							type = EET_Bleeding2; 					break;
+		case "BleedingEffect3" : 							type = EET_Bleeding3; 					break;
+		
+		
 		case "BleedingTrackingEffect" : 					type = EET_BleedingTracking; 			break;
 		case "BurningEffect" : 								type = EET_Burning; 					break;
 		case "PoisonEffect" : 								type = EET_Poison; 						break;
@@ -673,6 +688,10 @@ function HACK_NO_MEMORY_TO_COMPILE_EffectNameToType_Part1(effectName : name, out
 		case "PetriPhiltreEffect" : 						type = EET_PetriPhiltre; 				break;
 		case "SwallowEffect" : 								type = EET_Swallow; 					break;
 		case "TawnyOwlEffect" : 							type = EET_TawnyOwl; 					break;
+		
+		
+		case "ReinaldPhiltreEffect" : 						type = EET_ReinaldPhiltre; 				break;
+		
 		case "ThunderboltEffect" : 							type = EET_Thunderbolt; 				break;
 		case "WhiteHoneyEffect" :							type = EET_WhiteHoney; 					break;
 		case "WhiteRaffardDecoctionEffect" :				type = EET_WhiteRaffardDecoction; 		break;
@@ -842,6 +861,13 @@ function EffectTypeToName(effectType : EEffectType) : name
 		case EET_Ragdoll : 								return 'RagdollEffect';
 		
 		case EET_Bleeding : 							return 'BleedingEffect';
+		
+		
+		case EET_Bleeding1 : 							return 'BleedingEffect1';
+		case EET_Bleeding2 : 							return 'BleedingEffect2';
+		case EET_Bleeding3 : 							return 'BleedingEffect3';
+		
+		
 		case EET_BleedingTracking :						return 'BleedingTrackingEffect';
 		case EET_Burning : 								return 'BurningEffect';
 		case EET_Poison : 								return 'PoisonEffect';
@@ -871,6 +897,10 @@ function EffectTypeToName(effectType : EEffectType) : name
 		case EET_PetriPhiltre : 						return 'PetriPhiltreEffect';
 		case EET_Swallow : 								return 'SwallowEffect';
 		case EET_TawnyOwl : 							return 'TawnyOwlEffect';
+		
+		
+		case EET_ReinaldPhiltre : 						return 'ReinaldPhiltreEffect';
+		
 		case EET_Thunderbolt : 							return 'ThunderboltEffect';
 		case EET_WhiteHoney : 							return 'WhiteHoneyEffect';
 		case EET_WhiteRaffardDecoction : 				return 'WhiteRaffardDecoctionEffect';

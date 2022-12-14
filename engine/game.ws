@@ -58,6 +58,7 @@ import class CGame extends CObject
 	
 	import final function GetEngineTime() : EngineTime;
 	
+	
 	import final function GetEngineTimeAsSeconds() : Float;
 	
 	
@@ -78,6 +79,9 @@ import class CGame extends CObject
 	
     import final function LogTimeScales();
 
+	
+	import final function GetLocalTimeAsMilliseconds() : int;	
+	
 	
 	import final function GetGameTime() : GameTime;
 	
@@ -114,6 +118,7 @@ import class CGame extends CObject
 	
 	import final function OverrideRumbleDuration( lowFreq : float, highFreq : float, newDuration : float );
 	
+
 	
 	import final function IsPadConnected() : bool;
 
@@ -161,6 +166,9 @@ import class CGame extends CObject
 	
 	
 	import final function GetFreeCameraPosition() : Vector;
+
+	
+	import function MoveFreeCamera(position : Vector, rotation : EulerAngles);
 	
 	
 	import final function IsShowFlagEnabled( showFlag : EShowFlags ) : bool;
@@ -211,6 +219,8 @@ import class CGame extends CObject
 	import final function UnlockAchievement( achName : name ) : bool;
 	
 	import final function LockAchievement( achName : name ) : bool;
+
+	import final function NoticeAchievementProgress( achName : name, countNew : int, optional towards : int ) : bool;	
 	
 	import final function GetUnlockedAchievements( out unlockedAchievments : array< name > );
 	
@@ -254,6 +264,40 @@ import class CGame extends CObject
 	
 	
 	import final function SetSingleShotLoadingScreen( contextName : name, optional initString : string, optional videoToPlay : string );
+	
+	import final function ToggleRTEnabled() : void;
+	
+	import final function IsIntelGPU() : bool;
+	import final function GetRTEnabled() : bool;
+	import final function GetRTSupported() : bool;
+	import final function GetHairWorksEnabled() : bool;
+	import final function GetDLSSEnabled() : bool;
+	import final function GetFSREnabled() : bool;
+	import final function GetRTAOEnabled() : bool;
+	import final function GetRTREnabled() : bool;
+	import final function GetDLSSGEnabled() : bool;
+	import final function GetDLSSGSupported() : bool;
+	import final function GetReflexEnabled() : bool;
+	import final function GetReflexSupported() : bool;
+	
+	import final function GetGameResource() : CGameResource;
+
+	import final function GetPhotomodeEnabled() : bool;
+	import final function SetPhotomodeEnabled( photomodeEnabled: bool ) : void;
+	
+	public function GetToggleButtonCaption() : string
+	{
+		if (theGame.GetRTEnabled()) {
+			return GetLocStringByKeyExt("panel_video_performance_mode");
+		} else {
+			return GetLocStringByKeyExt("panel_video_quality_mode");
+		}
+	}
+
+	
+	
+	import final function IsHdrSupported() : bool;
+	import final function IsRayTracingSupported() : bool;
 };
 
 

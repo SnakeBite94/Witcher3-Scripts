@@ -455,12 +455,13 @@ class W3MagicOilLamp extends W3QuestUsableItem
 	{
 		super.OnUsed ( usedBy );
 		this.PlayEffect( 'light_on' );
+		theGame.HapticStart( "haptic_lamp_start" );
 	}
 	event OnHidden( usedBy : CEntity )
 	{
 		super.OnHidden ( usedBy );
 		this.StopEffect( 'light_on' );
-		
+		theGame.HapticStart( "haptic_lamp_stop" );
 	}
 	
 }
@@ -661,14 +662,21 @@ class W3HornvalHorn extends W3QuestUsableItem
 	
 	event OnUsed( usedBy : CEntity )
 	{
+		super.OnUsed(usedBy);
+		
+		
+		
+		
+		AddTimer('SirenStuff',0.5f,false);
+	}	
+	
+	
+	timer function SirenStuff(dt:float,id:int)
+	{
 		var i 				: int;
 		var actorsAround 	: array<CActor>;
 		var actor 			: CActor;
 		var params			: SCustomEffectParams;
-		
-		super.OnUsed(usedBy);
-		
-		
 		
 		params.effectType 	= EET_HeavyKnockdown;
 		params.creator 		= thePlayer;
@@ -683,7 +691,8 @@ class W3HornvalHorn extends W3QuestUsableItem
 				actor.AddEffectCustom( params );
 			}
 		}
-	}	
+	}
+	
 }
 
 

@@ -38,6 +38,8 @@ import class CWorld extends CResource
 	
 	
 	import final function GetWaterTangent( point : Vector, direction : Vector, optional resolution : float  ) : Vector;
+	
+	import final function ForceUpdateWaterOnPause( force : bool );
 
 	
 	
@@ -89,6 +91,8 @@ import class CWorld extends CResource
 	
 	
 	import final function GetTraceManager() : CScriptBatchQueryAccessor;	
+	
+	import final function GetCameraDirector() : CCameraDirector;
 	
 	
 	event OnWeatherChange()

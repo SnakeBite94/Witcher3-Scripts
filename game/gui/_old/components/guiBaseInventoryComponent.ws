@@ -332,10 +332,18 @@ abstract class W3GuiBaseInventoryComponent
 		isQuest = _inv.ItemHasTag(item,'Quest');
 		canDrop = !isQuest && !_inv.ItemHasTag(item, 'NoDrop');
 			
-		if( slotType == EES_Quickslot2 ) 
+		if( slotType == EES_Quickslot2 && !_inv.IsItemMask( item ) ) 
 		{
 			slotType = EES_Quickslot1;
 		}
+		
+		
+		if( slotType == EES_Petard2 ) 
+		{
+			slotType = EES_Petard1;
+		}
+		
+		
 		flashObject.SetMemberFlashInt( "id", ItemToFlashUInt(item) );
 		
 		if (!_inv.IsItemOil(item))
@@ -442,6 +450,10 @@ abstract class W3GuiBaseInventoryComponent
 		flashObject.SetMemberFlashBool( "isArmorRepairKit", _inv.ItemHasTag(item, 'ArmorReapairKit') );
 		flashObject.SetMemberFlashBool( "isWeaponRepairKit", _inv.ItemHasTag(item, 'WeaponReapairKit') );
 		flashObject.SetMemberFlashBool( "isDye", _inv.IsItemDye( item ) );
+		flashObject.SetMemberFlashBool( "isMask", _inv.IsItemMask( item ) ); 
+		
+		
+		flashObject.SetMemberFlashBool( "canBeDyed", !_inv.ItemHasTag(item, 'noDye') );
 		
 		flashObject.SetMemberFlashBool( "showExtendedTooltip", true );
 		

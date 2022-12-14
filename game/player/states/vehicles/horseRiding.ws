@@ -313,11 +313,15 @@ state HorseRiding in CR4Player extends UseGenericVehicle
 		var angleDistanceBetweenCameraAndHorse : float;
 		
 		
+		var mult : float;
+		var sprintingAngle : float;
+		
+		
 		if ( !parent.IsAlive() )
 		{
 			moveData.pivotDistanceController.SetDesiredDistance( 4.0 );
 			moveData.pivotPositionController.SetDesiredPosition( parent.GetWorldPosition() );
-			moveData.pivotRotationController.SetDesiredPitch( -40 );
+			
 			return true;
 		}
 		
@@ -347,8 +351,8 @@ state HorseRiding in CR4Player extends UseGenericVehicle
 		}
 		else if ( !horseComp.inCanter && !horseComp.inGallop && !horseComp.OnCheckHorseJump() )
 		{
-			moveData.pivotDistanceController.SetDesiredDistance( 2.4 );
-			currDesiredDist = 2.4;
+			moveData.pivotDistanceController.SetDesiredDistance( 3.5 ); 
+			currDesiredDist = 3.5;										
 			
 			
 			if ( !horseComp.OnCheckHorseJump() )
@@ -361,8 +365,8 @@ state HorseRiding in CR4Player extends UseGenericVehicle
 		}
 		else if ( horseComp.inGallop && !horseComp.OnCheckHorseJump() )
 		{
-			moveData.pivotDistanceController.SetDesiredDistance( 4.1f );
-			currDesiredDist = 4.1;
+			moveData.pivotDistanceController.SetDesiredDistance( 4.1f ); 
+			currDesiredDist = 4.1;										 
 		}
 		
 		if ( horseComp.OnCheckHorseJump() )
@@ -380,8 +384,56 @@ state HorseRiding in CR4Player extends UseGenericVehicle
 		}
 		else
 			shouldStopCamera = false;
+		
+		
+		if(parent.GetHorseCamera())
+		{
+			moveData.pivotDistanceController.SetDesiredDistance( 1.5f );		
+			moveData.pivotPositionController.offsetZ = 2.2f;
 			
-		DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector(0,0,0), 0.3f, dt );			
+			sprintingAngle = AngleDistance(parent.GetHeading(), theCamera.GetCameraHeading());
+			if(sprintingAngle > 8)
+			{
+				sprintLeft = true;
+			}
+			else if(sprintLeft && sprintingAngle > 7)
+			{
+				sprintLeft = true;
+			}
+			else
+				sprintLeft = false;					
+
+			if(horseComp.inCanter)
+			{
+				mult = AbsF( sprintingAngle );
+				mult = mult/180;
+				mult = SqrF(mult) * -1;	
+			
+				if(sprintLeft && theInput.LastUsedGamepad())
+					DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.3f, -0.42f + mult, 0.0f ), 0.7f, dt );
+				else
+					DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.8f, -0.42f + mult, 0.0f ), 0.7f, dt );
+			}
+			else if(horseComp.inGallop)
+			{
+				if(sprintLeft && theInput.LastUsedGamepad())
+					DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.3f, -0.9f, 0.1f ), 1.0f, dt );		
+				else
+					DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.8f, -0.9f, 0.1f ), 1.0f, dt );		
+			}
+			else
+			{
+				mult = AbsF( AngleDistance(camera.GetHeading(), thePlayer.GetHeading()) );
+				mult = mult/180;
+				mult = SqrF(mult) * -1;		
+
+				DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.8f, -0.7f + mult, 0.1f ), 1.0f, dt );	
+				sprintLeft = false;	
+			}
+		}
+		else
+		
+			DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector(0,0,0), 1.3f, dt );			
 		
 		if( horseComp.cameraMode == 1 )
 		{
@@ -432,6 +484,11 @@ state HorseRiding in CR4Player extends UseGenericVehicle
 
 		return shouldStopCamera;
 	}
+	
+	
+	
+	var sprintLeft : bool;
+	
 	
 	
 	

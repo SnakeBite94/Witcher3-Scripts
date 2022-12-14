@@ -21,7 +21,7 @@ class W3Effect_AirDrain extends CBaseGameplayEffect
 		
 		super.OnUpdate(deltaTime);
 		
-		if(isOnPlayer && thePlayer.CanPlaySpecificVoiceset() )
+		if(isOnPlayer && thePlayer.CanPlaySpecificVoiceset()  && FactsQuerySum("nge_block_geralt_coughing") <= 0 )
 		{
 			thePlayer.PlayVoiceset( 100, "coughing" );
 			thePlayer.SetCanPlaySpecificVoiceset( false );

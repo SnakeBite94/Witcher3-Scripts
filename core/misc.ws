@@ -106,6 +106,7 @@ function LogCritical(str : string)								{LogChannel('CriticalStates', str);}
 function LogCriticalPlayer(str : string)						{}	
 function LogEffects(str : string)								{LogChannel('Buffs', str);}
 function LogFacts(str : string)									{LogChannel('Facts', str);}
+function LogGalaxy(str : string)								{LogChannel('Galaxy', str);}
 function LogHaggle(str : string)								{LogChannel('Haggling', str);}
 function LogInput(str : string)									{LogChannel('Input', str);}
 function LogItems(str : string)									{LogChannel('Items', str);}

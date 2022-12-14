@@ -448,7 +448,7 @@ class CExplorationStateManager extends CSelfUpdatingComponent
 		}
 		
 		
-		if( !m_ActiveB || !theGame.IsActive() || theGame.IsPaused() )
+		if( !m_ActiveB || !theGame.IsActive() || theGame.IsPaused() || theGame.GetPhotomodeEnabled() )
 		{
 			return;
 		}		

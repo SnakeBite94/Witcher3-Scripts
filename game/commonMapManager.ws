@@ -234,7 +234,11 @@ import abstract class CCommonMapManager extends IGameSystem
 		if( arr1.Size() >= 100 )
 		{			
 			theGame.GetGamerProfile().AddAchievement(EA_Explorer);
-		}	
+		}
+		else
+		{
+			theGame.GetGamerProfile().NoticeAchievementProgress(EA_Explorer, arr1.Size());
+		}
 	}
 	
 	public function GetMappinType( tag : name ) : name 

@@ -499,6 +499,11 @@ class W3ArrowProjectile extends W3AdvancedProjectile
 		var inv 		: CInventoryComponent;
 		var shield		: CEntity;
 		
+		
+		var relativeRot : EulerAngles;
+		var relativePos : Vector;
+		
+		
 		StopProjectile();
 		StopActiveTrail();
 		isActive = false;
@@ -506,9 +511,28 @@ class W3ArrowProjectile extends W3AdvancedProjectile
 		inv = victim.GetInventory();
 		
 		shield = inv.GetItemEntityUnsafe(inv.GetItemFromSlot('l_weapon'));
-		this.CreateAttachment( shield );
 		
-		this.CreateAttachmentAtBoneWS(shield, 'Root', pos, this.GetWorldRotation());
+		if( ((W3BoltProjectile)this) )
+		{
+			relativePos.X = RandRangeF(0.22f, -0.22f);
+			relativePos.Y = RandRangeF(0.25f, 0.2f);
+			relativePos.Z = RandRangeF(0.22f, -0.22f);
+			relativeRot.Pitch = 180 + RandRange(10, -10);
+			relativeRot.Roll =  RandRange(10, -10);
+			relativeRot.Yaw =  RandRange(10, -10);
+		}
+		else
+		{
+			relativePos.X = RandRangeF(0.22f, -0.22f);
+			relativePos.Y = RandRangeF(-0.1f, -0.25f);
+			relativePos.Z = RandRangeF(0.22f, -0.22f);
+			relativeRot.Pitch = 180 + RandRange(10, -10);
+			relativeRot.Roll =  RandRange(10, -10);
+			relativeRot.Yaw =  RandRange(10, -10);
+		}
+		
+		this.CreateAttachment( shield, , relativePos, relativeRot );
+		
 	}
 	
 	function AttachArrowToRagdoll(victim : CActor, pos : Vector, boneName : name)

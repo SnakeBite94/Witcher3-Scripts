@@ -175,6 +175,9 @@ class CBTTaskAttack extends CBTTaskPlayAnimationEventDecorator
 			SleepOneFrame();
 		}
 		combatDataStorage.SetIsAttacking( true, GetLocalTime() );
+		
+		((CPlayer)GetCombatTarget()).SetPlayerUnderAttack( true ); 
+		
 		theGame.GetBehTreeReactionManager().CreateReactionEventIfPossible( GetActor(), 'NpcAttackAction', 10.0, 15.0f, -1, -1, true); 
 		
 		return BTNS_Active;
@@ -186,6 +189,8 @@ class CBTTaskAttack extends CBTTaskPlayAnimationEventDecorator
 		var target : CActor = GetCombatTarget();
 		
 		combatDataStorage.SetIsAttacking( false );
+		
+		((CPlayer)GetCombatTarget()).SetPlayerUnderAttack( false ); 
 		
 		
 		target.SetUnpushableTarget( NULL );

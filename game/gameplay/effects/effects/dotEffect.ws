@@ -74,11 +74,22 @@ abstract class W3DamageOverTimeEffect extends CBaseGameplayEffect
 		var params : W3BuffDoTParams;
 		var perk20Bonus :SAbilityAttributeValue;
 		
+		var skillPassiveMod : float; 
+		
 		params = (W3BuffDoTParams)customParams;
 		if(params)
 		{
 			isEnvironment = params.isEnvironment;
 		}
+		
+		
+		if( params.isFromBomb )
+		{
+			skillPassiveMod = CalculateAttributeValue(GetWitcherPlayer().GetAttributeValue('potion_duration'));
+			effectValue.valueAdditive *= ( 1 + skillPassiveMod );
+		}
+		
+		
 		
 		if( params.isPerk20Active )
 		{
@@ -237,4 +248,5 @@ class W3BuffDoTParams extends W3BuffCustomParams
 {
 	var isEnvironment : bool;			
 	var isPerk20Active : bool;			
+	var isFromBomb 		: bool; 
 }

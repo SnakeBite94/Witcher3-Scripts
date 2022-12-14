@@ -119,3 +119,22 @@ quest function ForgetTargetQuest( npcTag : name )
 	
 	
 }
+
+
+quest function SetAttitudeTowardsNPC( npcTag : name, targetTag : name, attitude : EAIAttitude )
+{
+	var npcs : array<CNewNPC>;
+	var target : CActor;
+	var i : int;
+	
+	theGame.GetNPCsByTag( npcTag, npcs );
+	target = theGame.GetActorByTag( targetTag );
+	
+	if(npcs.Size() > 0 && target)
+	{
+		for ( i=0; i < npcs.Size(); i+=1 )
+		{
+			npcs[i].SetAttitude( target, attitude );
+		}	
+	}
+}

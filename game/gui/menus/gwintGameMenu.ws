@@ -41,6 +41,7 @@ class CR4GwintGameMenu extends CR4GwintBaseMenu
 	private var m_fxShowTutorial : CScriptedFlashFunction;
 	
 	private var playerWon:bool;
+	private var playerForfeited:bool;
 	private var tutorialActive:bool; default tutorialActive = false;
 	
 	function EnableJournalTutorialEnries()
@@ -115,7 +116,7 @@ class CR4GwintGameMenu extends CR4GwintBaseMenu
 		
 		theGame.GetGuiManager().RequestMouseCursor(false);
 		
-		if (thePlayer.GetGwintMinigameState() != EMS_End_PlayerWon && thePlayer.GetGwintMinigameState() != EMS_End_PlayerLost)
+		if (thePlayer.GetGwintMinigameState() != EMS_End_PlayerWon && thePlayer.GetGwintMinigameState() != EMS_End_PlayerLost && thePlayer.GetGwintMinigameState() != EMS_End_PlayerForfeited)
 		{
 			if (playerWon)
 			{
@@ -124,7 +125,11 @@ class CR4GwintGameMenu extends CR4GwintBaseMenu
 			}
 			else
 			{
-				thePlayer.SetGwintMinigameState( EMS_End_PlayerLost );
+				if(playerForfeited)
+					thePlayer.SetGwintMinigameState( EMS_End_PlayerLost | EMS_End_PlayerForfeited);
+				else
+					thePlayer.SetGwintMinigameState( EMS_End_PlayerLost );
+					
 				theTelemetry.LogWithValue( TE_HERO_GWENT_MATCH_ENDED, 0 );
 			}
 		}
@@ -156,6 +161,7 @@ class CR4GwintGameMenu extends CR4GwintBaseMenu
 	public function OnQuitGameConfirmed()
 	{
 		playerWon = false;
+		playerForfeited = true;
 		super.OnQuitGameConfirmed();
 	}
 	
@@ -229,6 +235,7 @@ class CR4GwintGameMenu extends CR4GwintBaseMenu
 	event  OnMatchResult(pWon : bool):void
 	{
 		playerWon = pWon;
+		playerForfeited = false;
 	}
 	
 	event  OnNeutralRoundVictoryAchievement():void

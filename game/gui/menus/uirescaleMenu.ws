@@ -64,6 +64,14 @@ class CR4UIRescaleMenu extends CR4MenuBase
 		UpdateRescale( frameScaleX, frameScaleY, 0, 0 );
 	}
 	
+	event  OnRefreshActiveUserDisplayName()
+	{
+		var username 			: string;
+
+		username = FixStringForFont(theGame.GetActiveUserDisplayName());
+		m_fxSetCurrentUsername.InvokeSelfOneArg(FlashArgString(username));
+	}
+
 	function UpdateRescale( frameScaleX : float, frameScaleY : float, scale : float, opacity : float )
 	{
 		var inGameConfigWrapper : CInGameConfigWrapper;

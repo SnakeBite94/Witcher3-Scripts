@@ -120,6 +120,9 @@ class W3LevelManager
 				points[EExperiencePoint].used = expForCurrentLevel;
 			}
 		}
+
+		
+		theTelemetry.LogWithValue(TE_HERO_LEVEL_UP, level);
 	}
 	
 	public final function ResetCharacterDev()
@@ -470,4 +473,16 @@ class W3LevelManager
 		
 		AddPoints( ESkillPoint, 10, false );
 	}
+	
+	
+	public function NGE_SetUsedPoints(amount : int)
+	{
+		points[ ESkillPoint ].used = amount;
+	}
+	
+	public function NGE_SetFreePoints(amount : int)
+	{
+		points[ ESkillPoint ].free = amount;
+	}
+	
 }

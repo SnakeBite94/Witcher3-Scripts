@@ -38,6 +38,7 @@ class CR4OverlayPopup extends CR4PopupBase
 	private var m_fxSetMouseCursorType 	   : CScriptedFlashFunction;
 	private var m_fxShowMouseCursor  	   : CScriptedFlashFunction;
 	private var m_fxShowSafeRect 		   : CScriptedFlashFunction;
+	private var m_fxSetGamepadTypeOverlay  : CScriptedFlashFunction;
 	
 	private var m_fxShowEP2Logo				: CScriptedFlashFunction;
 	
@@ -66,6 +67,7 @@ class CR4OverlayPopup extends CR4PopupBase
 		m_fxShowMouseCursor = m_flashModule.GetMemberFlashFunction( "showMouseCursor" );
 		m_fxShowSafeRect = m_flashModule.GetMemberFlashFunction( "showSafeRect" );
 		m_fxShowEP2Logo = m_flashModule.GetMemberFlashFunction( "showEP2Logo" );
+		m_fxSetGamepadTypeOverlay = m_guiManager.GetIngameMenu().GetMenuFlash().GetMemberFlashFunction( "setGamepadType" );
 		
 		m_fxClearNotificationsQueue = m_flashModule.GetMemberFlashFunction( "clearNotificationsQueue" );
 		
@@ -128,6 +130,18 @@ class CR4OverlayPopup extends CR4PopupBase
 		
 		UpdateCursorVisibility();
 		SetControllerType(isGamepad);
+		UpdateInputDeviceType();
+	}
+	
+	protected function UpdateInputDeviceType():void
+	{
+		var deviceType : EInputDeviceType;
+		m_fxSetGamepadTypeOverlay = m_guiManager.GetIngameMenu().GetMenuFlash().GetMemberFlashFunction( "setGamepadType" );
+		if (m_fxSetGamepadTypeOverlay)
+		{
+			deviceType = theInput.GetLastUsedGamepadType();
+			m_fxSetGamepadTypeOverlay.InvokeSelfOneArg( FlashArgUInt(deviceType) );
+		}
 	}
 	
 	private function ShowSoftwareCursor()

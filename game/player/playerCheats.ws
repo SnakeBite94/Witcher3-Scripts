@@ -318,6 +318,10 @@ exec function xy( x : float, y : float )
 	thePlayer.Teleport( Vector( x, y, z ) );
 }
 
+exec function moveCamera(x : float, y : float, z : float, rx : float, ry : float, rz : float) {
+	theGame.MoveFreeCamera(Vector(x, y, z), EulerAngles(rx, ry, rz));
+}
+
 exec function TrajectoryDebug( actorTag : name )
 {
 	var actor : CActor;

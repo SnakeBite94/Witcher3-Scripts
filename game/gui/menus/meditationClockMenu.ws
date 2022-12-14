@@ -118,6 +118,8 @@ class CR4MeditationClockMenu extends CR4MenuBase
 			MeditatingEnd();
 		}
 		
+		theGame.RemoveAllTimeScales(); 
+		
 		if (!theGame.IsPaused())
 		{
 			theGame.Pause("menus");

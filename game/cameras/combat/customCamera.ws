@@ -54,7 +54,7 @@ import class CCustomCamera extends CEntity
 	import var allowAutoRotation	: bool;
 	import var fov					: float;
 	
-	import final function Activate( optional blendTime : float );
+	import final function Activate( optional blendTime : float, optional resetPosition : bool );
 	
 	import final function GetActivePivotPositionController() : ICustomCameraPivotPositionController;
 	import final function GetActivePivotRotationController() : ICustomCameraPivotRotationController;
@@ -86,6 +86,8 @@ import class CCustomCamera extends CEntity
 	import final function NextPreset();
 	import final function PrevPreset();
 	
+	import final function GetTilt() : float;
+	import final function SetTilt( tilt : float );
 
 	import final function SetCollisionOffset( offset : Vector );
 	

@@ -7,6 +7,18 @@
 
 
 
+enum IgmOptionsAmbientOcclusion
+{
+	IGMOPT_AO_SSAO = 1,
+	IGMOPT_AO_RTAO = 2,
+	IGMOPT_AO_NRDRTAO = 3
+};
+
+enum IgmOptionsAntiAliasing
+{	
+	IGMOPT_AA_DLSS = 4
+};
+
 function IngameMenu_GetOptionTypeFromString(optionType:string): InGameMenuActionType
 {
 	if (optionType == "TOGGLE")
@@ -21,9 +33,33 @@ function IngameMenu_GetOptionTypeFromString(optionType:string): InGameMenuAction
 	{
 		return IGMActionType_List;
 	}
+	else if (optionType == "OPTIONSWITHCOND")
+	{
+		return IGMActionType_ListWithCondition;
+	}
 	else if (optionType == "GAMMA")
 	{
 		return IGMActionType_Gamma;
+	}
+	else if (optionType == "BUTTON")
+	{
+		return IGMActionType_Button;
+	}
+	else if (optionType == "STEPPER")
+	{
+		return IGMActionType_Stepper;
+	}
+	else if (optionType == "TOGGLESTEPPER")
+	{
+		return IGMActionType_ToggleStepper;
+	}
+	else if (optionType == "SEPARATOR")
+	{
+		return IGMActionType_Separator;
+	}
+	else if (optionType == "SUBTLE_SEPARATOR")
+	{
+		return IGMActionType_SubtleSeparator;
 	}
 	
 	return IGMActionType_Toggle; 
@@ -43,9 +79,14 @@ function IngameMenu_FillOptionsSubMenuData(flashStorageUtility : CScriptedFlashV
 	var videoDisplayName		: string;
 	var dlcGroupID				: int = -1;
 	var inGameConfigWrapper 	: CInGameConfigWrapper;
-	
+	var isPlatformWithoutRt     : bool = false;
+	var dlcOptionIndex			: array<int>;
+	var hasChildOptions			: bool;
+
 	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
-	
+	isPlatformWithoutRt = (theGame.GetPlatform() == Platform_Xbox_SCARLETT_LOCKHART) 
+						|| (theGame.GetPlatform() == Platform_Xbox1) 
+						|| (theGame.GetPlatform() == Platform_PS4);
 	l_optionChildList = flashStorageUtility.CreateTempFlashArray();
 	
 	
@@ -58,7 +99,11 @@ function IngameMenu_FillOptionsSubMenuData(flashStorageUtility : CScriptedFlashV
 		l_DataFlashObject = flashStorageUtility.CreateTempFlashObject();
 		l_DataFlashObject.SetMemberFlashString( "id", "option_control_scheme");
 		l_DataFlashObject.SetMemberFlashUInt(  "tag", NameToFlashUInt('controllerhelp') );
-		l_DataFlashObject.SetMemberFlashString(  "label", GetLocStringByKeyExt("menu_option_control_scheme") );	
+		
+		if(theGame.GetPlatform() == Platform_PS5)
+			l_DataFlashObject.SetMemberFlashString(  "label", GetLocStringByKeyExt("panel_mainmenu_controls_options_gamepad_description_ps5") );	
+		else
+			l_DataFlashObject.SetMemberFlashString(  "label", GetLocStringByKeyExt("menu_option_control_scheme") );	
 		
 		l_DataFlashObject.SetMemberFlashUInt( "type", IGMActionType_ControllerHelp );	
 		
@@ -112,9 +157,11 @@ function IngameMenu_FillOptionsSubMenuData(flashStorageUtility : CScriptedFlashV
 		
 		groupOptionArray.PushBackFlashObject(l_DataFlashObject);
 	}
+	
+	IngameMenu_FetchAndGenerateGroupMenuObject(flashStorageUtility, "panel_", videoDisplayName + ".postprocess", l_optionChildList, groupParentArray);
+		
 	if (theGame.GetPlatform() == Platform_PC)
 	{
-		IngameMenu_FetchAndGenerateGroupMenuObject(flashStorageUtility, "panel_", "video.postprocess", l_optionChildList, groupParentArray);
 		IngameMenu_FetchAndGenerateGroupMenuObject(flashStorageUtility, "panel_", "video.general", l_optionChildList, groupParentArray);
 	}
 	
@@ -136,9 +183,9 @@ function IngameMenu_FillOptionsSubMenuData(flashStorageUtility : CScriptedFlashV
 		{
 			dlcGroupID = i;
 		}
-		else
+		else if(groupName != 'DLCOptions')
 		{
-			IngameMenu_FillArrayFromConfigGroup(flashStorageUtility, i, l_optionChildList);
+			IngameMenu_FillArrayFromConfigGroup(flashStorageUtility, i, l_optionChildList, isMainMenu);
 		}
 	}
 	
@@ -146,24 +193,51 @@ function IngameMenu_FillOptionsSubMenuData(flashStorageUtility : CScriptedFlashV
 	if (isMainMenu)
 	{
 		
+		if ( theGame.GetDLCManager().IsAnyDLCAvailable() )
+		{
+			
+			l_DataFlashObject = flashStorageUtility.CreateTempFlashObject();
+			l_DataFlashObject.SetMemberFlashString( "id", "installed_dlc" );
+			l_DataFlashObject.SetMemberFlashUInt( "tag", NameToFlashUInt( 'InstalledDLC' ) );
+			l_DataFlashObject.SetMemberFlashUInt( "type", IGMActionType_InstalledDLC );
+			l_DataFlashObject.SetMemberFlashString( "label", GetLocStringByKeyExt( "panel_mainmenu_installed_dlc" ) );
+			l_optionChildList.PushBackFlashObject( l_DataFlashObject );
+
+			
+			hasChildOptions = false;
+			inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+
+			for ( i = 0; i < inGameConfigWrapper.GetGroupsNum(); i += 1 )
+			{
+				groupName = inGameConfigWrapper.GetGroupName( i );
+				if (groupName == 'DLC' || groupName == 'DLCOptions')
+				{			
+					dlcOptionIndex.PushBack( i );
+				}
+			}
+			
+			if ( dlcOptionIndex.Size() > 0 && GetObjectFromArrayWithLabel( l_optionChildList, "id", "gameplay", l_DataFlashObject ) )
+			{
+				for ( i = 0; i < dlcOptionIndex.Size(); i += 1 )
+				{
+					groupName = inGameConfigWrapper.GetGroupName( dlcOptionIndex[i] );
+					hasChildOptions = IngameMenu_FillSubMenuOptionsList( flashStorageUtility, dlcOptionIndex[i], groupName, l_DataFlashObject );
+				}
+			}
+		}
+		
+
+		
 		l_DataFlashObject = flashStorageUtility.CreateTempFlashObject();
 		l_DataFlashObject.SetMemberFlashString( "id", "credits");
 		l_DataFlashObject.SetMemberFlashUInt(  "tag", CreditsIndex_Wither3 );
 		l_DataFlashObject.SetMemberFlashString(  "label", GetLocStringByKeyExt("panel_mainmenu_extras_credits") );	
 		
 		l_DataFlashObject.SetMemberFlashString( "listTitle", GetLocStringByKeyExt("panel_mainmenu_extras_credits") );
-		
 		l_ChildMenuFlashArray = flashStorageUtility.CreateTempFlashArray();
-		
-		if ( theGame.GetDLCManager().IsEP1Available() || theGame.GetDLCManager().IsEP2Available() )
-		{
-			l_DataFlashObject.SetMemberFlashUInt( "type", IGMActionType_MenuHolder );
-			IngameMenu_FillCreditsSubGroup(flashStorageUtility, l_ChildMenuFlashArray);
-		}
-		else
-		{
-			l_DataFlashObject.SetMemberFlashUInt( "type", IGMActionType_Credits );	
-		}
+
+		l_DataFlashObject.SetMemberFlashUInt( "type", IGMActionType_MenuHolder );
+		IngameMenu_FillCreditsSubGroup(flashStorageUtility, l_ChildMenuFlashArray);
 		
 		l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
 		
@@ -243,15 +317,34 @@ function IngameMenu_FillCreditsSubGroup(flashStorageUtility : CScriptedFlashValu
 		rootFlashArray.PushBackFlashObject(l_DataFlashObject);
 		
 	}
+	
+		
+	l_DataFlashObject = flashStorageUtility.CreateTempFlashObject();
+	l_DataFlashObject.SetMemberFlashString( "id", "credits_witcher_ng" );
+	l_DataFlashObject.SetMemberFlashUInt(  "tag", CreditsIndex_Witcher3_NG );
+	l_DataFlashObject.SetMemberFlashString(  "label", GetLocStringByKeyExt("nge_credits_title") );	
+	l_DataFlashObject.SetMemberFlashUInt( "type", IGMActionType_Credits );	
+		
+	l_ChildMenuFlashArray = flashStorageUtility.CreateTempFlashArray();
+	l_DataFlashObject.SetMemberFlashArray( "subElements", l_ChildMenuFlashArray );
+		
+	rootFlashArray.PushBackFlashObject(l_DataFlashObject);
+	
 }
 
-function IngameMenu_FillArrayFromConfigGroup(flashStorageUtility : CScriptedFlashValueStorage, groupID:int, rootFlashArray:CScriptedFlashArray):void
+function IngameMenu_FillArrayFromConfigGroup(flashStorageUtility : CScriptedFlashValueStorage, groupID:int, rootFlashArray:CScriptedFlashArray, isMainMenu : bool ):void
 {
 	var groupRootObject			: CScriptedFlashObject;
 	var groupName				: name;
 	var hasChildOptions			: bool;
 	var groupParentArray		: CScriptedFlashArray;
 	var inGameConfigWrapper	: CInGameConfigWrapper;
+	
+	var i						: int;
+	var hasChildOptionsDLC		: bool;
+	var dlcOptionIndex			: int;
+	
+	dlcOptionIndex = -1;
 	
 	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
 	
@@ -265,8 +358,10 @@ function IngameMenu_FillArrayFromConfigGroup(flashStorageUtility : CScriptedFlas
 		{
 			hasChildOptions = IngameMenu_FillSubMenuOptionsList(flashStorageUtility, groupID, groupName, groupRootObject);
 			
+		
 			
-			if (!hasChildOptions && groupParentArray)
+			
+			if (! ( hasChildOptions || hasChildOptionsDLC ) && groupParentArray)
 			{
 				groupParentArray.PopBack();
 			}
@@ -284,13 +379,15 @@ function IngameMenu_FetchAndGenerateGroupMenuObject(flashStorageUtility : CScrip
 	var tmp					: string;
 	var currentArray		: CScriptedFlashArray;
 	var currentObject		: CScriptedFlashObject;
-	
 	var inGameConfigWrapper	: CInGameConfigWrapper;
 	
 	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
 	
 	deconstructedString = groupDisplayName;
 	currentArray = rootFlashArray;
+	
+	if ( GetVarsNumForGroupDisplayName( groupDisplayName ) == 0 )
+		return currentObject;	
 	
 	while (deconstructedString != "")
 	{
@@ -347,6 +444,190 @@ function IngameMenu_FetchAndGenerateGroupMenuObject(flashStorageUtility : CScrip
 	return currentObject;
 }
 
+function IngameMenu_IsOptionalEntryActive( optionName : name ):bool
+{
+	var masterOptionValue	: string;
+
+	var inGameConfigWrapper	: CInGameConfigWrapper;
+	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+	
+	
+	
+	
+	
+	
+	
+	
+	return false;
+}
+
+
+function SetOptionSkipsAndLocks(flashObject : CScriptedFlashObject, optionName : name, applySSAOLocks:bool) : void
+{
+	var skip : string = "-1";
+	var lock : string = "-1";
+	var inGameConfigWrapper	: CInGameConfigWrapper;
+
+	if (applySSAOLocks && optionName == 'Virtual_SSAOSolution')
+	{
+		inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+		
+		if(inGameConfigWrapper.GetVarValueByStr( "Rendering/RT" , 'EnableRT' ) == "true")
+		{
+			skip = IntToString(IGMOPT_AO_SSAO);
+		}
+		
+		else if(inGameConfigWrapper.GetVarValueByStr( "Rendering/RT" , 'EnableRT' ) == "false")
+		{
+			lock = IntToString(IGMOPT_AO_RTAO);
+		}
+	}
+	
+	else if(optionName == 'AAMode' && !theGame.GetIsDLSSSupported() )
+	{
+		lock = IntToString(IGMOPT_AA_DLSS);
+	}
+	
+	flashObject.SetMemberFlashString( "skip", skip );
+	flashObject.SetMemberFlashString( "lock", lock );
+}
+
+function IngameMenu_FetchDropdownOptions( 
+	flashStorageUtility : CScriptedFlashValueStorage, 
+	groupID : int, 
+	groupName : name, 
+	varName : name, 
+	currentOptionId : int,
+	optionArray : CScriptedFlashArray )
+{
+	var inGameConfigWrapper	: CInGameConfigWrapper;
+	var numOptions			: int;
+	var numOptionValues		: int;
+	var optionName			: name;
+	var optionDisplayName	: string;
+	var optionDisplayType	: string;
+	var optionValue			: string;
+	var optionVarValue		: string;
+	var currentOptionType	: int;
+	var numValidOptions		: int;
+	var noLocalization 		: bool;
+	var customNames			: bool;
+	var customDisplayName	: bool;
+	var optionObject		: CScriptedFlashObject;
+	var optionFlashArray 	: CScriptedFlashArray;
+	var i					: int;
+	var option_it 			: int;
+	var masterTag			: int;
+	var previousOptionName 	: name;
+	
+	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+	numOptions = inGameConfigWrapper.GetEntriesNumForOption( groupName, varName, currentOptionId );
+	previousOptionName = '';
+	
+	for (i = 0; i < numOptions; i += 1)
+	{
+		optionName = inGameConfigWrapper.GetEntryNameForOption( groupName, varName, currentOptionId, i );
+		numOptionValues = inGameConfigWrapper.GetVarOptionsNum(groupName, optionName);
+		optionDisplayType = inGameConfigWrapper.GetVarDisplayType(groupName, optionName);
+		noLocalization = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'nonLocalized');
+		customNames = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'customNames');
+		customDisplayName = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'customDisplayName');
+		
+		if ( inGameConfigWrapper.IsVarVisible(groupName, optionName) && 
+			(optionDisplayType != "OPTIONS" || numOptionValues > 1) &&
+			(optionDisplayType != "STEPPER" || numOptionValues > 1) )
+		{
+			optionDisplayName = inGameConfigWrapper.GetVarDisplayName(groupName, optionName);
+			
+			optionValue = inGameConfigWrapper.GetVarValue(groupName, optionName);
+			
+			optionObject = flashStorageUtility.CreateTempFlashObject();
+			optionObject.SetMemberFlashString( "id", "" + i );
+			
+			if (customDisplayName)
+			{
+				optionObject.SetMemberFlashString( "label", inGameMenu_TryLocalize(optionDisplayName) );
+			}
+			else
+			{
+				optionObject.SetMemberFlashString( "label", inGameMenu_TryLocalize("option_" + optionDisplayName) );
+			}
+						
+			optionObject.SetMemberFlashUInt( "type", IngameMenu_GetOptionTypeFromString(optionDisplayType) );
+			optionObject.SetMemberFlashUInt( "tag", NameToFlashUInt(optionName) );
+			optionObject.SetMemberFlashString( "current", optionValue);
+			optionObject.SetMemberFlashString( "startingValue", optionValue);
+			optionObject.SetMemberFlashInt( "groupID", groupID );
+			optionObject.SetMemberFlashBool( "checkHardwareCursor", optionName == 'UIMouseSensitivity' || optionName == 'MouseSensitivity' );
+			optionObject.SetMemberFlashBool( "streamable", false );	
+			optionObject.SetMemberFlashBool( "isDropdownContent", true );
+			optionObject.SetMemberFlashBool( "isDeveloper", inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'developer') );
+			
+			SetOptionSkipsAndLocks(optionObject, optionName, false);
+						
+			optionFlashArray = flashStorageUtility.CreateTempFlashArray();
+			for (option_it = 0; option_it < numOptionValues; option_it += 1)
+			{
+				optionVarValue = inGameConfigWrapper.GetVarOption(groupName, optionName, option_it);
+
+				if (IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_List 
+					|| IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_ListWithCondition
+					|| IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_Stepper )
+				{
+					if(!customNames)
+					{
+						optionVarValue = "preset_value_" + optionVarValue;
+					}
+					
+					if(!noLocalization)
+					{
+						optionVarValue = inGameMenu_TryLocalize(optionVarValue);
+					}
+				}
+				
+				optionFlashArray.PushBackFlashString( optionVarValue );
+			}
+			
+			optionObject.SetMemberFlashArray( "subElements", optionFlashArray );
+			
+			if( optionDisplayType == "TOGGLE" && numOptionValues == 2 )
+			{
+				optionVarValue = inGameConfigWrapper.GetVarOption(groupName, optionName, 0);
+				optionObject.SetMemberFlashString( "offString", inGameMenu_TryLocalize(optionVarValue) );
+				
+				optionVarValue = inGameConfigWrapper.GetVarOption(groupName, optionName, 1);
+				optionObject.SetMemberFlashString( "onString", inGameMenu_TryLocalize(optionVarValue) );
+			}
+			
+			if( optionDisplayType == "STEPPER" || optionDisplayType == "TOGGLESTEPPER" )
+			{
+				optionObject.SetMemberFlashBool( "hideIndicator", inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'hideIndicator') );
+			}
+			
+			if( inGameConfigWrapper.DoVarHasTag( groupName, optionName, 'developer' ) )
+			{
+				if( previousOptionName == '' )
+				{
+					masterTag = NameToFlashUInt( varName );
+				}
+				else
+				{
+					masterTag = NameToFlashUInt( previousOptionName );
+				}
+				
+				optionObject.SetMemberFlashUInt( "masterTag", masterTag );
+				theGame.GetGuiManager().GetIngameMenu().GetDeveloperOptionsContainer().PushBackFlashObject( optionObject );
+			}
+			else
+			{
+				optionArray.PushBackFlashObject(optionObject);
+			}
+			
+			previousOptionName = optionName;
+		}
+	}
+}
+
 function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashValueStorage, groupID:int, groupName:name, groupRootObject : CScriptedFlashObject):bool
 {
 	var groupDisplayName	: string;
@@ -363,12 +644,49 @@ function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashV
 	var optionDisplayName	: string;
 	var optionDisplayType	: string;
 	var optionValue			: string;
+	var startingValue		: string;
 	var optionVarValue		: string;
 	var currentOptionType	: int;
 	var numValidOptions		: int;
 	var noLocalization 		: bool;
+	var nonLocalizedExceptFirst : bool;
 	var customNames			: bool;
 	var customDisplayName	: bool;
+	var previousOptionName 	: name;
+	
+	var streamable			  : bool;
+	var streamableStatusArray : CScriptedFlashArray;
+	var streamableStatus      : CScriptedFlashObject;
+	
+	var optionalEntry		  : bool;
+
+	
+	var isIntelGPU		  	  : bool;
+	var isRTEnabled  		  : bool;
+	var isRTSupported  		  : bool;
+	var isHairWorksEnabled	  : bool;
+	var isFSREnabled		  : bool;
+	var isDLSSEnabled		  : bool;
+	var isRTAOEnabled		  : bool;
+	var isRTREnabled 		  : bool;
+	var isDLSSGEnabled	  	  : bool;
+	var isDLSSGSupported	  : bool;
+	var isReflexSupported	  : bool;
+
+	var enableIfRT		  	: bool;
+	var enableIfRTSupported	: bool;
+	var enableIfHairWorks	: bool;
+	var enableIfFSR		  	: bool;
+	var disableIfFSR		: bool;
+	var enableIfDLSS		: bool;
+	var disableIfDLSS		: bool;
+	var disableIfRTAO		: bool;
+	var disableIfRTR		: bool;
+	var enableIfDLSSGSupported	: bool;
+	var enableIfReflexSupported	: bool;
+	var disableIfDLSSG			: bool;
+	var disableIfDLSSGAndSet1	: bool;
+	var disableIfIntelGPU    	: bool;
 	
 	var inGameConfigWrapper	: CInGameConfigWrapper;
 	
@@ -379,6 +697,18 @@ function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashV
 	groupOptionArray = groupRootObject.GetMemberFlashArray("subElements");
 	
 	groupDisplayName = StrReplaceAll(inGameConfigWrapper.GetGroupDisplayName(groupName), ".", "_");
+
+	isIntelGPU = theGame.IsIntelGPU();
+	isRTEnabled = theGame.GetRTEnabled();
+	isRTSupported = theGame.GetRTSupported();
+	isHairWorksEnabled = theGame.GetHairWorksEnabled();
+	isFSREnabled = theGame.GetFSREnabled();
+	isDLSSEnabled = theGame.GetDLSSEnabled();
+	isRTAOEnabled = theGame.GetRTAOEnabled();
+	isRTREnabled = theGame.GetRTREnabled();
+	isDLSSGEnabled = theGame.GetDLSSGEnabled();
+	isDLSSGSupported = theGame.GetDLSSGSupported();
+	isReflexSupported = theGame.GetReflexSupported();
 	
 	presetNum = inGameConfigWrapper.GetGroupPresetsNum(groupName);
 	if (presetNum > 0)
@@ -389,13 +719,15 @@ function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashV
 		optionObject.SetMemberFlashString( "id", "Presets");
 		optionObject.SetMemberFlashString( "label", inGameMenu_TryLocalize("preset_" + groupDisplayName ));
 		optionObject.SetMemberFlashUInt( "tag", NameToFlashUInt( 'OptionPresets') );
-		
 		optionObject.SetMemberFlashUInt( "type", IGMActionType_Preset );
 		optionObject.SetMemberFlashInt( "groupID", groupID );
 		optionObject.SetMemberFlashUInt( "GroupName", NameToFlashUInt( groupName ) );
 		
 		optionFlashArray = flashStorageUtility.CreateTempFlashArray();
 		
+		
+		if ( !isRTSupported && presetNum == 6 ) presetNum = 4;
+
 		for (i = 0; i < presetNum; i += 1)
 		{
 			optionValueObject = flashStorageUtility.CreateTempFlashObject();
@@ -411,18 +743,42 @@ function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashV
 	}
 	
 	numOptions = inGameConfigWrapper.GetVarsNumByGroupName(groupName);
+	previousOptionName = '';
 	
 	for (i = 0; i < numOptions; i += 1)
 	{
-		optionName = inGameConfigWrapper.GetVarNameByGroupName(groupName, i);
-		
+		optionName = inGameConfigWrapper.GetVarNameByGroupName(groupName, i);		
 		numOptionValues = inGameConfigWrapper.GetVarOptionsNum(groupName, optionName);
 		optionDisplayType = inGameConfigWrapper.GetVarDisplayType(groupName, optionName);
 		noLocalization = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'nonLocalized');
+		nonLocalizedExceptFirst = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'nonLocalizedExceptFirst'); 
 		customNames = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'customNames');
 		customDisplayName = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'customDisplayName');
+		streamable = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'streamable');
+		optionalEntry = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'optional');
+
+		enableIfRT = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfRT');
+		enableIfRTSupported = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfRTSupported');
+		enableIfHairWorks = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfHairWorks');
+		enableIfFSR = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfFSR');
+		disableIfFSR = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfFSR');
+		enableIfDLSS = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfDLSS');
+		disableIfDLSS = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfDLSS');
+		disableIfRTAO = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfRTAO');
+		disableIfRTR = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfRTR');
+		enableIfDLSSGSupported = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfDLSSGSupported');
+		enableIfReflexSupported = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'enableIfReflexSupported');
+		disableIfDLSSG = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfDLSSG');
+		disableIfDLSSGAndSet1 = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfDLSSGAndSet1');
+		disableIfIntelGPU = inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'disableIfIntelGPU');
 		
-		if (inGameConfigWrapper.IsVarVisible(groupName, optionName) && (optionDisplayType != "OPTIONS" || numOptionValues > 1))
+		if( optionName == 'DeveloperMode' )
+			continue;
+		
+		if ( inGameConfigWrapper.IsVarVisible(groupName, optionName) && 
+			(optionDisplayType != "OPTIONS" || numOptionValues > 1) &&
+			(optionDisplayType != "STEPPER" || numOptionValues > 1) &&
+			((optionalEntry && IngameMenu_IsOptionalEntryActive(optionName)) || !optionalEntry) )
 		{
 			optionDisplayName = inGameConfigWrapper.GetVarDisplayName(groupName, optionName);
 			
@@ -430,6 +786,7 @@ function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashV
 			
 			optionObject = flashStorageUtility.CreateTempFlashObject();
 			optionObject.SetMemberFlashString( "id", "" + i );
+			
 			if (customDisplayName)
 			{
 				optionObject.SetMemberFlashString( "label", inGameMenu_TryLocalize(optionDisplayName) );
@@ -438,51 +795,143 @@ function IngameMenu_FillSubMenuOptionsList(flashStorageUtility : CScriptedFlashV
 			{
 				optionObject.SetMemberFlashString( "label", inGameMenu_TryLocalize("option_" + optionDisplayName) );
 			}
+
+			startingValue = optionValue;
+			if (disableIfDLSSGAndSet1 && isDLSSGEnabled) optionValue = "1";
+			if (enableIfRTSupported && !isRTSupported) optionValue = "0"; 
+			if (optionName == 'Virtual_HairWorksLevel' && disableIfIntelGPU && isIntelGPU) optionValue = "0"; 
+						
 			optionObject.SetMemberFlashUInt( "type", IngameMenu_GetOptionTypeFromString(optionDisplayType) );
-			
 			optionObject.SetMemberFlashUInt( "tag", NameToFlashUInt(optionName) );
 			optionObject.SetMemberFlashString( "current", optionValue);
-			optionObject.SetMemberFlashString( "startingValue", optionValue);
+			optionObject.SetMemberFlashString( "startingValue", startingValue);
 			optionObject.SetMemberFlashInt( "groupID", groupID );
-			if (optionName == 'UIMouseSensitivity' || optionName == 'MouseSensitivity')
+			optionObject.SetMemberFlashBool( "checkHardwareCursor", optionName == 'UIMouseSensitivity' || optionName == 'MouseSensitivity' );
+			optionObject.SetMemberFlashBool( "streamable", streamable);	
+			optionObject.SetMemberFlashBool( "isDropdownContent", false );
+			optionObject.SetMemberFlashBool( "isDeveloper", inGameConfigWrapper.DoVarHasTag( groupName, optionName, 'developer' ) );
+			optionObject.SetMemberFlashBool( "disabled", 
+				(enableIfRT && !isRTEnabled) ||
+				(enableIfRTSupported && !isRTSupported) ||
+				(enableIfHairWorks && !isHairWorksEnabled) ||
+				(enableIfFSR && !isFSREnabled) ||
+				(disableIfFSR && isFSREnabled) ||
+				(enableIfDLSS && !isDLSSEnabled) ||
+				(disableIfDLSS && isDLSSEnabled) ||
+				(disableIfRTAO && isRTAOEnabled) ||
+				(disableIfRTR && isRTREnabled) ||
+				(disableIfDLSSGAndSet1 && isDLSSGEnabled) ||
+				(disableIfDLSSG && isDLSSGEnabled) ||
+				(enableIfDLSSGSupported && !isDLSSGSupported) ||
+				(enableIfReflexSupported && !isReflexSupported) ||
+				(disableIfIntelGPU && isIntelGPU)
+			);
+			optionObject.SetMemberFlashBool( "indent", inGameConfigWrapper.DoVarHasTag( groupName, optionName, 'indent' ) );
+			
+			SetOptionSkipsAndLocks(optionObject, optionName, false);
+			
+			if( optionName == 'Virtual_Localization_speech' )
 			{
-				optionObject.SetMemberFlashBool( "checkHardwareCursor", true );
+				theGame.SetVoiceLangDownloadStatusListener( flashStorageUtility );
 			}
-			else
-			{
-				optionObject.SetMemberFlashBool( "checkHardwareCursor", false );
-			}
+			
+			SetDescriptionText(optionObject, optionName, optionValue);
 			
 			optionFlashArray = flashStorageUtility.CreateTempFlashArray();
-			
+			streamableStatusArray = flashStorageUtility.CreateTempFlashArray();
 			for (option_it = 0; option_it < numOptionValues; option_it += 1)
 			{
 				optionVarValue = inGameConfigWrapper.GetVarOption(groupName, optionName, option_it);
-				if (IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_List)
+				
+				if( streamable )
+				{
+					streamableStatus = flashStorageUtility.CreateTempFlashObject();
+					streamableStatus.SetMemberFlashString( "optionValueString", optionVarValue );			
+					streamableStatus.SetMemberFlashBool( "optionStatus", theGame.GetVoiceLangDownloadStatus( optionVarValue ) == STREAMABLE_LOADED );
+					
+					streamableStatusArray.PushBackFlashObject( streamableStatus );
+				}
+				
+				if (IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_List 
+					|| IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_ListWithCondition
+					|| IngameMenu_GetOptionTypeFromString(optionDisplayType) == IGMActionType_Stepper )
 				{
 					if(!customNames)
 					{
 						optionVarValue = "preset_value_" + optionVarValue;
 					}
 					
-					if(!noLocalization)
+					if((!noLocalization && !nonLocalizedExceptFirst) || 
+						(nonLocalizedExceptFirst && option_it == 0)) 
 					{
 						optionVarValue = inGameMenu_TryLocalize(optionVarValue);
 					}
 				}
 				
-				optionFlashArray.PushBackFlashString( optionVarValue);
+				optionFlashArray.PushBackFlashString( optionVarValue );
 			}
 			
 			optionObject.SetMemberFlashArray( "subElements", optionFlashArray );
 			
-			groupOptionArray.PushBackFlashObject(optionObject);
+			if( optionDisplayType == "TOGGLE" && numOptionValues == 2 )
+			{
+				optionVarValue = inGameConfigWrapper.GetVarOption(groupName, optionName, 0);
+				optionObject.SetMemberFlashString( "offString", inGameMenu_TryLocalize(optionVarValue) );
+				
+				optionVarValue = inGameConfigWrapper.GetVarOption(groupName, optionName, 1);
+				optionObject.SetMemberFlashString( "onString", inGameMenu_TryLocalize(optionVarValue) );
+			}
 			
-			numValidOptions += 1;
+			if( optionDisplayType == "STEPPER" || optionDisplayType == "TOGGLESTEPPER" )
+			{
+				optionObject.SetMemberFlashBool( "hideIndicator", inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'hideIndicator') );
+			}
+			
+			if( streamable )
+			{
+				optionObject.SetMemberFlashArray( "streamableStatus", streamableStatusArray );
+			}
+			
+			if( inGameConfigWrapper.DoVarHasTag( groupName, optionName, 'developer' ) )
+			{				
+				optionObject.SetMemberFlashUInt( "masterTag", NameToFlashUInt( previousOptionName ) );
+				theGame.GetGuiManager().GetIngameMenu().GetDeveloperOptionsContainer().PushBackFlashObject( optionObject );
+			}
+			else
+			{
+				groupOptionArray.PushBackFlashObject(optionObject);
+				numValidOptions += 1;
+			}
+				
+			if( inGameConfigWrapper.DoVarHasTag(groupName, optionName, 'dropDown' ) )
+			{
+				IngameMenu_FetchDropdownOptions( 
+					flashStorageUtility, 
+					groupID, 
+					groupName, 
+					optionName, 
+					inGameConfigWrapper.GetCurrentOptionId( groupName, optionName ), 
+					groupOptionArray );
+			}
 		}
 	}
 	
 	return numValidOptions > 0;
+}
+
+function SetDescriptionText(optionObject: CScriptedFlashObject, optionName: name, optionValue: string)
+{
+	if( optionName == 'EnableRT' && (theGame.GetPlatform() == Platform_PS5 || theGame.GetPlatform() == Platform_Xbox_SCARLETT_ANACONDA) )
+	{
+		optionObject.SetMemberFlashString( "descriptionTrue", GetLocStringByKeyExt("panel_video_quality_mode_tooltip") );
+		optionObject.SetMemberFlashString( "descriptionFalse", GetLocStringByKeyExt("panel_video_performance_mode_tooltip") );
+	}
+	else if( optionName == 'LockhartPerformanceMode' )
+	{
+		optionObject.SetMemberFlashString( "descriptionFalse", GetLocStringByKeyExt("option_lockhart_performance_mode_description_quality") );
+		optionObject.SetMemberFlashString( "descriptionTrue", GetLocStringByKeyExt("option_lockhart_performance_mode_description_performance") );
+		
+	}
 }
 
 function IngameMenu_AddDifficultyOption(flashStorageUtility : CScriptedFlashValueStorage, listToAddToo:CScriptedFlashArray):void
@@ -572,11 +1021,33 @@ function IngameMenu_ChangePresetValue(groupId:name, targetPresetIndex:int, paren
 	
 	if (parentMenu)
 	{
-		parentMenu.UpdateOptions(groupId);
+		parentMenu.UpdateOptions(groupId, false);
 	}
 }
 
-function IngameMenu_GatherOptionUpdatedValues(groupId:name, parentObject:CScriptedFlashObject, flashStorageUtility : CScriptedFlashValueStorage):void
+function IngameMenu_GatherOptionUpdatedValueList(groupId:name, flashStorageUtility : CScriptedFlashValueStorage):void
+{
+	var inGameConfigWrapper	: CInGameConfigWrapper;
+	var numOptions				: int;
+	var iter					: int;
+	var curOptionName			: name;
+	var curOptionValue			: string;
+	
+	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+		
+	numOptions = inGameConfigWrapper.GetVarsNumByGroupName(groupId);
+	
+	for (iter = 0; iter < numOptions; iter += 1)
+	{
+		curOptionName = inGameConfigWrapper.GetVarNameByGroupName(groupId, iter);
+		curOptionValue = inGameConfigWrapper.GetVarValue(groupId, curOptionName);
+
+		IngameMenu_AdditionalOptionValueChangeHandling( groupId, curOptionName, curOptionValue, flashStorageUtility );
+	}
+}
+
+
+function IngameMenu_GatherOptionUpdatedValues(groupId:name, parentObject:CScriptedFlashObject, flashStorageUtility : CScriptedFlashValueStorage, applyLocks:bool):void
 {
 	var inGameConfigWrapper	: CInGameConfigWrapper;
 	var optionsArray			: CScriptedFlashArray;
@@ -603,10 +1074,73 @@ function IngameMenu_GatherOptionUpdatedValues(groupId:name, parentObject:CScript
 		curOptionValue = inGameConfigWrapper.GetVarValue(groupId, curOptionName);
 		curOptionInfo.SetMemberFlashString( "optionValue", curOptionValue );
 		
+		
+		
+		SetOptionSkipsAndLocks(curOptionInfo, curOptionName, applyLocks);
+		
 		optionsArray.PushBackFlashObject(curOptionInfo);
 	}
 	
 	parentObject.SetMemberFlashArray( "optionList", optionsArray );
+}
+
+
+
+function IngameMenu_AdditionalOptionValueChangeHandling(  groupName:name, optionName:name, optionValue:string, flashStorageUtility : CScriptedFlashValueStorage )
+{
+	var optionDisplayName	: string;
+	var optionDisplayType	: string;
+	var optionVarValue		: string;
+	var optionObject		: CScriptedFlashObject;
+	var optionFlashArray 	: CScriptedFlashArray;
+	var entriesArray		: CScriptedFlashArray;
+	var entriesObject		: CScriptedFlashObject;
+	var it					: int;
+	var numOptionValues		: int;
+	var optionId 			: int;
+	var entriesNum 			: int;
+	
+	var inGameConfigWrapper	: CInGameConfigWrapper;
+	inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();
+	
+	if( inGameConfigWrapper.DoVarHasTag( groupName, optionName, 'dropDown' ) )
+	{
+		
+		entriesArray = flashStorageUtility.CreateTempFlashArray();
+		numOptionValues = inGameConfigWrapper.GetVarOptionsNum( groupName, optionName );
+		
+		for( optionId = 0; it < numOptionValues; optionId += 1 )
+		{
+			entriesNum = inGameConfigWrapper.GetEntriesNumForOption( groupName, optionName, optionId );
+			for( it = 0; it < entriesNum; it += 1 )
+			{
+				optionObject = flashStorageUtility.CreateTempFlashObject();
+				optionObject.SetMemberFlashUInt( "tag", NameToFlashUInt( inGameConfigWrapper.GetEntryNameForOption( groupName, optionName, optionId, it ) ) );
+				entriesArray.PushBackFlashObject( optionObject );
+			}
+		}
+
+		entriesObject = flashStorageUtility.CreateTempFlashObject();
+		entriesObject.SetMemberFlashArray( "list", entriesArray );
+		flashStorageUtility.SetFlashObject( "options.remove_entry", entriesObject );
+		
+		
+		entriesArray = flashStorageUtility.CreateTempFlashArray();
+		IngameMenu_FetchDropdownOptions( 
+			flashStorageUtility, 
+			inGameConfigWrapper.GetGroupIdx( groupName ), 
+			groupName, 
+			optionName, 
+			StringToInt( optionValue ),
+			entriesArray );
+		entriesObject = flashStorageUtility.CreateTempFlashObject();
+		entriesObject.SetMemberFlashArray( "list", entriesArray );
+		entriesObject.SetMemberFlashUInt( "masterTag", NameToFlashUInt( optionName ) );
+		flashStorageUtility.SetFlashObject( "options.insert_entry", entriesObject );
+		
+		theGame.GetGuiManager().ForceProcessFlashStorage();
+		theGame.GetGuiManager().GetIngameMenu().ShowDeveloperOptions( theGame.GetInGameConfigWrapper().GetVarValue( 'Rendering', 'DeveloperMode' ) == "true" );
+	}
 }
 
 function IngameMenu_GatherKeybindData(parentArray : CScriptedFlashArray, flashStorageUtility : CScriptedFlashValueStorage):void
@@ -664,7 +1198,20 @@ function IngameMenu_GatherKeybindData(parentArray : CScriptedFlashArray, flashSt
 	currentKeybindData.SetMemberFlashBool("locked", true);
 	currentKeybindData.SetMemberFlashBool("permaLocked", true);
 	currentKeybindData.SetMemberFlashUInt("tag", 0);
+	
 	parentArray.PushBackFlashObject(currentKeybindData);
+	
+	if (theGame.IsRayTracingSupported() && !theGame.IsFinalBuild())
+	{
+		currentKeybindData = flashStorageUtility.CreateTempFlashObject();
+		currentKeybindData.SetMemberFlashString("label", inGameMenu_TryLocalize("panel_video_enable_rt"));
+		currentKeybindData.SetMemberFlashString("value", GetLocStringByKeyExt("ControlLayout_hold")+" "+inGameMenu_LocalizeKeyString("IK_F7"));
+		currentKeybindData.SetMemberFlashBool("locked", true);
+		currentKeybindData.SetMemberFlashBool("permaLocked", true);
+		currentKeybindData.SetMemberFlashUInt("tag", 0);
+	
+		parentArray.PushBackFlashObject(currentKeybindData);
+	}
 }
 
 function IngameMenu_GetLocalizedKeybindName(keybindName : name) : string

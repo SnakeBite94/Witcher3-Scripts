@@ -61,6 +61,16 @@ import class CR4TutorialSystem extends IGameSystem
 	{
 		return FactsQuerySum("tutorial_system_is_running");
 	}
+
+	public function GetActiveTutorialIndex() : int
+	{
+		return currentlyShownTutorialIndex;
+	}
+
+	public function HasActiveTutorial() : bool
+	{
+		return currentlyShownTutorialIndex >= 0;
+	}
 	
 	public function IsOnTickOptimalizationEnabled() : bool
 	{
@@ -132,7 +142,10 @@ import class CR4TutorialSystem extends IGameSystem
 			return;
 			
 		ClearSavedVars();
-				
+		
+		
+		thePlayer.CreateTutorialInput();
+		
 		wereMessagesEnabled = AreMessagesEnabled();
 		uiHandler = new W3TutorialManagerUIHandler in this;
 		
@@ -273,6 +286,9 @@ import class CR4TutorialSystem extends IGameSystem
 	
 	private function CanShowTutorial(canBeShownInDialogs : bool, canBeShownInMenus : bool) : bool
 	{		
+		if ( theGame.GetPhotomodeEnabled() )
+			return false;
+
 		if(!canBeShownInDialogs && theGame.IsDialogOrCutscenePlaying())
 			return false;
 			
@@ -392,7 +408,8 @@ import class CR4TutorialSystem extends IGameSystem
 	{
 		if(queuedTutorials.Size() > 0 && currentlyShownTutorialIndex >= 0)
 		{
-			ReloadMessageOnInputChange( theInput.LastUsedGamepad(), true );			
+			if(FactsQuerySum("nge_showing_alt_sign_casting_tut") == 0 )	
+				ReloadMessageOnInputChange( theInput.LastUsedGamepad(), true );			
 		}
 	}
 		
@@ -741,10 +758,10 @@ import class CR4TutorialSystem extends IGameSystem
 		manager.ActivateEntry( entryBase, status);
 		
 		
-		if(theInput.UsesPlaystationPadScript())
-		{
-			resource = (CJournalResource)LoadResource(scriptTag + "_ps4");
-		}		
+		
+		
+		
+		
 		if(!resource)
 		{
 			resource = (CJournalResource)LoadResource(scriptTag + "_pad");
@@ -760,8 +777,8 @@ import class CR4TutorialSystem extends IGameSystem
 		
 		if(theInput.LastUsedGamepad())
 		{
-			if(theInput.UsesPlaystationPadScript())
-				tutorialEntry = (CJournalTutorial)manager.GetEntryByString(scriptTag + "_ps4");
+			
+			
 				
 			if(!tutorialEntry)
 				tutorialEntry = (CJournalTutorial)manager.GetEntryByString(scriptTag + "_pad");
@@ -1109,16 +1126,16 @@ import class CR4TutorialSystem extends IGameSystem
 		performReload = false;
 		
 		
-		if(theInput.UsesPlaystationPadScript())
-		{
-			resPad = (CJournalResource)LoadResource(queuedTutorials[0].tutorialScriptTag + "_ps4");
-			if(!resPad)
-				resPad = (CJournalResource)LoadResource(queuedTutorials[0].tutorialScriptTag + "_pad");
-		}
-		else
-		{
+		
+		
+		
+		
+		
+		
+		
+		
 			resPad = (CJournalResource)LoadResource(queuedTutorials[0].tutorialScriptTag + "_pad");
-		}
+		
 		
 		if(resPad)
 		{
@@ -1162,7 +1179,21 @@ import class CR4TutorialSystem extends IGameSystem
 	
 	private function GetTutorialLocalizedText(locId : int) : string
 	{
-		return ReplaceTagsToIcons(GetLocStringById(locId));
+		
+		var s: string;
+		var inGameConfigWrapper : CInGameConfigWrapper;
+		var configValue: string;
+		
+		inGameConfigWrapper = (CInGameConfigWrapper)theGame.GetInGameConfigWrapper();		
+		configValue = inGameConfigWrapper.GetVarValue( 'Controls', 'AlternativeRadialMenuInputMode' );
+		s = GetLocStringById(locId);
+		
+		if(configValue && m_tutorialHintDataObj.scriptTag=='TutorialSelectQuen')
+		{	
+			s = StrReplace(s, "GI_AxisLeft", "GI_AxisRight");
+		}
+
+		return ReplaceTagsToIcons(s);
 	}
 	
 	

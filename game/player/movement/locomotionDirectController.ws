@@ -855,14 +855,21 @@ class CR4LocomotionPlayerControllerScript extends CR4LocomotionDirectControllerS
 		}
 		
 		else if( !thePlayer.IsActionAllowed( EIAB_Sprint ) && thePlayer.IsActionAllowed( EIAB_RunAndSprint ) && !thePlayer.IsCombatMusicEnabled() )
-		{			
+		{	
 			if ( speed <= 0.f )
 			{
 				player.playerMoveType = PMT_Idle;
 			}
 			else if( thePlayer.IsSprintActionPressed() )
 			{
-				if ( speed > 0.8f )
+				
+				if(theInput.LastUsedGamepad() && thePlayer.GetLeftStickSprint() && thePlayer.IsInInterior() && !thePlayer.GetIsSprintToggled())
+				{
+					speed = MapF( MinF( speed, speedRunning ), 0.0f, speedRunning, 0.0f,  speedWalkingMax );
+					player.playerMoveType = PMT_Walk;
+				}	
+				
+				else if ( speed > 0.8f )
 				{
 					speed = MinF( speed, speedRunning );
 					player.playerMoveType = PMT_Run;
@@ -885,7 +892,7 @@ class CR4LocomotionPlayerControllerScript extends CR4LocomotionDirectControllerS
 			if ( theInput.LastUsedGamepad() )
 			{
 				thePlayer.SetWalkToggle(false);
-				thePlayer.SetSprintToggle(false);
+				
 			}
 			
 			if ( speed <= 0.f )
@@ -1040,9 +1047,17 @@ class CR4LocomotionPlayerControllerScript extends CR4LocomotionDirectControllerS
 			}
 		}
 		
-		if ( player.playerMoveType <= PMT_Walk )
-		{
-			thePlayer.SetSprintToggle( false );
+		if ( player.playerMoveType < PMT_Walk || (player.playerMoveType <= PMT_Run && !theGame.IsFocusModeActive() && !thePlayer.IsInAir()) )	
+		{	
+			if(thePlayer.IsInInterior() && player.playerMoveType >= PMT_Walk )
+			{
+				if(thePlayer.IsInCombat() && thePlayer.GetStatPercents(BCS_Stamina) <= 0.f)
+					thePlayer.SetSprintToggle( false );
+			}
+			else if(!thePlayer.IsActionAllowed( EIAB_Sprint ) && thePlayer.IsActionAllowed( EIAB_RunAndSprint ) && player.playerMoveType >= PMT_Walk)
+			{}
+			else
+				thePlayer.SetSprintToggle( false );
 		}
 		
 		

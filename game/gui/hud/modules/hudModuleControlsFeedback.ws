@@ -24,7 +24,15 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 	private var m_lastUsedPCInput		: bool;
 	private var m_CurrentHorseComp		: W3HorseComponent;
 	
+	private var m_altSignCasting		: bool; 
+	private var m_altSignCastingLast	: bool; 
+	
 	private const var KEY_CONTROLS_FEEDBACK_LIST : string; 		default KEY_CONTROLS_FEEDBACK_LIST 		= "hud.module.controlsfeedback";
+	
+	
+	private var minimapModule : CR4HudModuleMinimap2;
+	private var objectiveModule : CR4HudModuleQuests;
+	
 
 	event  OnConfigUI()
 	{		
@@ -47,7 +55,30 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 		if (hud)
 		{
 			hud.UpdateHudConfig('ControlsFeedbackModule', true);
+			
+			
+			minimapModule = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+			objectiveModule = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
+			
 		}
+	}
+	
+	private function GetMinimapModule()
+	{
+		var hud : CR4ScriptedHud;
+		
+		hud = (CR4ScriptedHud)theGame.GetHud();
+		if(hud)
+			minimapModule = (CR4HudModuleMinimap2)hud.GetHudModule("Minimap2Module");
+	}
+	
+	private function GetObjectiveModule()
+	{
+		var hud : CR4ScriptedHud;
+		
+		hud = (CR4ScriptedHud)theGame.GetHud();
+		if(hud)
+			objectiveModule = (CR4HudModuleQuests)hud.GetHudModule("QuestsModule");
 	}
 
 	public function UpdateInputContext( inputContextName :name )
@@ -68,11 +99,35 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 			return true;
 		}
 		
+		
+		if(!minimapModule)
+			GetMinimapModule();
+		if(!objectiveModule)
+			GetObjectiveModule();
+		
+		
 		if( m_currentPlayerWeapon != thePlayer.GetCurrentMeleeWeaponType() )
 		{
 			m_currentPlayerWeapon = thePlayer.GetCurrentMeleeWeaponType();
 			UpdateSwordDisplay();
 		}
+		
+		
+		if(!theInput.LastUsedPCInput() && thePlayer.GetInputHandler().GetIsAltSignCasting() && theInput.IsActionPressed('CastSign')) 
+		{
+			m_altSignCasting = true;
+		}
+		else
+		{
+			m_altSignCasting = false;
+			
+		}		
+		if(m_altSignCastingLast != m_altSignCasting)
+		{
+			UpdateInputContextActions();
+			m_altSignCastingLast = m_altSignCasting;
+		}
+		
 		
 		if( m_lastUsedPCInput != theInput.LastUsedPCInput() )
 		{
@@ -111,6 +166,20 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 			else
 				SendInputContextActions(m_currentInputContext,true);
 		}
+		
+		else
+		{
+			if(m_altSignCasting)
+				SendInputContextActions('',true);
+			else
+			{
+				if(thePlayer.IsCiri())
+					SendInputContextActions('Combat_Replacer_Ciri',true);
+				else
+					SendInputContextActions('Combat',true);
+			}
+		}
+		
 	}
 	
 	function ForceModuleUpdate()
@@ -162,6 +231,10 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 		var alterAttackKeysPC 	    : array< EInputKey >;
 		var modifier				: EInputKey;
 		
+		
+		var showCiriMinimap, showCiriObjective : bool;
+		
+		
 		GetBracketSymbols(bracketOpeningSymbol, bracketClosingSymbol);
 		
 		l_FlashArray = m_flashValueStorage.CreateTempFlashArray();
@@ -186,14 +259,24 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 			m_displayGallop 	= m_CurrentHorseComp.OnCanGallop();
 			m_displayCanter 	= m_CurrentHorseComp.OnCanCanter();
 			
+			
+			showCiriMinimap = minimapModule.GetMinimapDuringFocusCombat();
+			showCiriObjective = objectiveModule.GetObjectiveDuringFocusCombat();
+			
+			
 			switch(inputContextName)
 			{
 				case 'JumpClimb' :
 					return;
 				case 'Exploration' :  					
-					if( m_displaySprint )
+					if( m_displaySprint && !theGame.IsFocusModeActive() )	
 					{
-						l_ActionsArray.PushBack('Sprint');
+						
+						if(m_lastUsedPCInput || !thePlayer.GetLeftStickSprint())
+							l_ActionsArray.PushBack('Sprint');	
+						else
+							l_ActionsArray.PushBack('SprintToggle');	
+						
 					}
 					if( m_displayJump )
 					{
@@ -209,21 +292,31 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 					}
 					break;
 				case 'Exploration_Replacer_Ciri' :
-					if( m_displaySprint )
+					if( m_displaySprint && !theGame.IsFocusModeActive() )	
 					{
-						l_ActionsArray.PushBack('Sprint');
+						
+						if(m_lastUsedPCInput || !thePlayer.GetLeftStickSprint())
+							l_ActionsArray.PushBack('Sprint');	
+						else
+							l_ActionsArray.PushBack('SprintToggle');	
+						
 					}
 					if( m_displayJump )
 					{
 						l_ActionsArray.PushBack('Jump');
 					}
+					
+					if( showCiriMinimap || showCiriObjective )
+						l_ActionsArray.PushBack('Focus');
+					
 					break;
 				case 'Horse' : 
-					if ( m_displayGallop )
+				case 'Horse_Replacer_Ciri' : 
+					if ( m_displayGallop || thePlayer.IsCiri() )
 					{
 						l_ActionsArray.PushBack('Gallop');
 					}
-					if ( m_displayCanter )
+					if ( m_displayCanter || thePlayer.IsCiri() )
 					{
 						l_ActionsArray.PushBack('Canter');
 					}
@@ -241,7 +334,12 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 					l_ActionsArray.PushBack('DiveDown');
 					if( m_displaySprint )
 					{
-						l_ActionsArray.PushBack('Sprint');
+						
+						if(m_lastUsedPCInput || !thePlayer.GetLeftStickSprint())
+							l_ActionsArray.PushBack('Sprint');	
+						else
+							l_ActionsArray.PushBack('SprintToggle');	
+						
 					}
 					l_swimingSprint = true;
 					break;		
@@ -253,7 +351,12 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 					l_ActionsArray.PushBack('DiveUp');
 					if( m_displaySprint )
 					{
-						l_ActionsArray.PushBack('Sprint');
+						
+						if(m_lastUsedPCInput || !thePlayer.GetLeftStickSprint())
+							l_ActionsArray.PushBack('Sprint');	
+						else
+							l_ActionsArray.PushBack('SprintToggle');	
+						
 					}
 					l_swimingSprint = true;
 					break;
@@ -286,6 +389,18 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 				default:
 					break;
 			}
+			
+			
+			if(m_altSignCasting)
+			{				
+				l_ActionsArray.Clear();
+				l_ActionsArray.PushBack('CbtRoll');
+				l_ActionsArray.PushBack('AttackLight');
+				l_ActionsArray.PushBack('Dodge');
+				l_ActionsArray.PushBack('AttackHeavy');
+				l_ActionsArray.PushBack('LockAndGuard');
+			}			
+			
 			
 			for( i = 0; i < l_ActionsArray.Size(); i += 1 )
 			{
@@ -383,6 +498,33 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 						break;
 				}
 				
+				
+				if(m_altSignCasting)
+				{
+					if( curAction == 'CbtRoll')
+					{					
+						
+						outKeys.PushBack(IK_Pad_A_CROSS);
+					}
+					else if ( curAction == 'AttackLight') 
+					{
+						outKeys.PushBack(IK_Pad_X_SQUARE);
+					}
+					else if ( curAction == 'Dodge') 
+					{
+						outKeys.PushBack(IK_Pad_B_CIRCLE);
+					}
+					else if ( curAction == 'AttackHeavy') 
+					{
+						outKeys.PushBack(IK_Pad_Y_TRIANGLE);
+					}
+					else if ( curAction == 'LockAndGuard') 
+					{
+						outKeys.PushBack(IK_Pad_RightTrigger);
+					}
+				}
+				
+				
 				l_DataFlashObject = m_flashValueStorage.CreateTempFlashObject();
 				bindingGFxData = l_DataFlashObject.CreateFlashObject("red.game.witcher3.data.KeyBindingData");
 				bindingGFxData.SetMemberFlashInt("gamepad_keyCode", outKeys[0] );
@@ -400,7 +542,7 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 					bindingGFxData.SetMemberFlashInt("altKeyCode", modifier );
 				}
 				
-				if( curAction == 'Sprint' && ( m_currentInputContext != 'Swimming' && m_currentInputContext != 'Diving') )
+				if( (curAction == 'Sprint' || curAction == 'SprintToggle') && ( m_currentInputContext != 'Swimming' && m_currentInputContext != 'Diving') )	
 				{
 					if( m_movementLockType != PMLT_Free )
 					{
@@ -423,6 +565,10 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 						if ( !theInput.IsToggleSprintBound() )
 							labelPrefix = "<font color=\"#FCAD36\">" + bracketOpeningSymbol + GetLocStringByKeyExt("ControlLayout_hold") + bracketClosingSymbol + "</font>";						
 						break;
+					case 'SprintToggle':
+						if ( !theInput.IsToggleSprintBound() )
+							labelPrefix = "<font color=\"#FCAD36\">" + bracketOpeningSymbol + StrReplace(GetLocStringByKeyExt("ControlLayout_press")," -","") + bracketClosingSymbol + "</font>";						
+						break;
 					case 'HorseDismount':
 						if ( m_lastUsedPCInput )
 						{
@@ -434,6 +580,13 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 						}
 						break;
 					case 'Run':
+						
+						if(m_lastUsedPCInput || !thePlayer.GetLeftStickSprint())
+							labelPrefix = "<font color=\"#FCAD36\">" + bracketOpeningSymbol + GetLocStringByKeyExt("ControlLayout_hold") + bracketClosingSymbol + "</font>";
+						else
+							labelPrefix = "<font color=\"#FCAD36\">" + bracketOpeningSymbol + StrReplace(GetLocStringByKeyExt("ControlLayout_press")," -","") + bracketClosingSymbol + "</font>";
+						
+						break;
 					case 'GI_Accelerate':
 					case 'GI_Decelerate':
 					case 'Canter':
@@ -454,7 +607,7 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 				{
 					actionLabel = GetLocStringByKeyExt("panel_button_common_jump");
 				}
-				else if( curAction == 'Sprint' && ( m_currentInputContext == 'Swimming' || m_currentInputContext == 'Diving') )
+				else if( (curAction == 'Sprint' || curAction == 'SprintToggle') && ( m_currentInputContext == 'Swimming' || m_currentInputContext == 'Diving') )	
 				{
 					actionLabel = GetLocStringByKeyExt("panel_input_action_fast_swiming");
 				}
@@ -478,12 +631,61 @@ class CR4HudModuleControlsFeedback extends CR4HudModuleBase
 				{
 					actionLabel = GetLocStringByKeyExt("ControlLayout_CiriBlink");
 				}
+				
+				else if ( curAction == 'SprintToggle' )
+				{
+					actionLabel = GetLocStringByKeyExt("panel_input_action_sprint");
+				}
+				
+				else if ( curAction == 'Focus' && thePlayer.IsCiri() )
+				{
+					if(showCiriMinimap && showCiriObjective)
+						actionLabel = GetLocStringByKeyExt("option_Minimap") + "/" + GetLocStringByKeyExt("panel_journal_quest_objectives");
+					else if (showCiriMinimap)
+						actionLabel = GetLocStringByKeyExt("option_Minimap");
+					else if (showCiriObjective)
+						actionLabel = GetLocStringByKeyExt("panel_journal_quest_objectives");
+				}
 				else
 				{					
 					actionLabel = GetLocStringByKeyExt("panel_input_action_"+StrLower(curAction));
 				}
 				
-				bindingGFxData.SetMemberFlashString("label", " <font color=\"#FFFFFF\">" + actionLabel + "</font> " + labelPrefix );
+				
+				if(m_altSignCasting)
+				{
+					if( curAction == 'CbtRoll')				
+					{		
+						actionLabel = GetLocStringById(1061945);
+						
+					}
+					else if ( curAction == 'AttackLight')	
+					{
+						actionLabel = GetLocStringById(1066290);
+						
+					}
+					else if ( curAction == 'Dodge') 		
+					{
+						actionLabel = GetLocStringById(1066292);
+						
+					}
+					else if ( curAction == 'AttackHeavy') 	
+					{
+						actionLabel = GetLocStringById(1066293);
+						
+					}
+					else if ( curAction == 'LockAndGuard')	
+					{
+						actionLabel = GetLocStringById(1066291);
+						
+					}
+				}
+				
+				
+				if(theGame.IsLanguageArabic())
+					bindingGFxData.SetMemberFlashString("label", labelPrefix + " <font color=\"#FFFFFF\">" + actionLabel + "</font>" );
+				else
+					bindingGFxData.SetMemberFlashString("label", " <font color=\"#FFFFFF\">" + actionLabel + "</font> " + labelPrefix );
 				
 				l_FlashArray.PushBackFlashObject(bindingGFxData);
 			}

@@ -448,6 +448,18 @@ class W3TooltipComponent
 			uniqueDescription = GetAerondightTooltipDescription( item );
 		}
 		
+		
+		if( itemInvComponent.ItemHasTag( item, 'sq304_unique_sword' ) )
+		{
+			uniqueDescription = GetLocStringByKeyExt( 'item_desc_sq304_sword' );
+		}
+		
+		
+		if( itemInvComponent.ItemHasTag( item, 'q402_unique_sword' ) )
+		{
+			uniqueDescription =  GetLocStringByKeyExt( 'item_desc_sq304_sword' );
+		}
+		
 		uniqueDescription += additionalDescription;
 		
 		if (categoryName == 'armor'|| categoryName == 'pants' || categoryName == 'boots' || categoryName == 'gloves')
@@ -820,7 +832,7 @@ class W3TooltipComponent
 		
 		setType = GetWitcherPlayer().GetSetBonusStatus( itemId, desc1, desc2, isActive1, isActive2 );
 		
-		if( setType != EIST_Undefined )
+		if( setType != EIST_Undefined && setType != EIST_Viper ) 
 		{
 			currentCount = GetWitcherPlayer().GetSetPartsEquipped( setType );
 			requiredCount = theGame.params.ITEMS_REQUIRED_FOR_MAJOR_SET_BONUS;
@@ -1013,6 +1025,12 @@ class W3TooltipComponent
 				{
 					oilBonusValue = "<font color=\"#FF0000\">" + oilBonusValue +  " " + oilStatFirst.attributeName + " (" + oilLocName + ")(" + oilCharges + "/" + oilMaxCharges + ")"+ "</font>";
 				}
+				
+				else if (GetWitcherPlayer().CanUseSkill(S_Alchemy_s06) && GetWitcherPlayer().GetSkillLevel(S_Alchemy_s06) > 2)
+				{
+					oilBonusValue = oilBonusValue +  " " + oilStatFirst.attributeName + " (" + oilLocName + ")";
+				}
+				
 				else
 				{
 					oilBonusValue = oilBonusValue +  " " + oilStatFirst.attributeName + " (" + oilLocName + ")(" + oilCharges + "/" + oilMaxCharges + ")";

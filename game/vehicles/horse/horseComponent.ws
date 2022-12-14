@@ -174,6 +174,10 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		mountTestCollisionGroups.PushBack( 'Terrain' );
 		mountTestCollisionGroups.PushBack( 'Static' );
 		mountTestCollisionGroups.PushBack( 'Destructible' );
+		
+		
+		horseNPC.SetBehaviorVariable( 'isRoach', 0.0f );
+		
 		if ( horseActor.HasTag( 'playerHorse' ) )
 		{
 			inv = horseActor.GetInventory();
@@ -193,6 +197,9 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 					inv.MountItem( items[0] );				
 				}				
 			}
+			
+			
+			horseNPC.SetBehaviorVariable( 'isRoach', 1.0f );
 		}
 		
 		
@@ -202,6 +209,11 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		}
 		
 		firstSpawn = false;
+		
+		
+		horseNPC.SetBehaviorVariable( 'canSlowWalk', 1.0f );
+		horseNPC.SetBehaviorVariable( 'reverse', 0.0f );	
+		horseNPC.SetBehaviorVariable( 'lookatOn', 0.0f );
 	}
 	
 	event OnInteraction( actionName : string, activator : CEntity )
@@ -215,9 +227,9 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 	
 	event OnMountStarted( entity : CEntity, vehicleSlot : EVehicleSlot )
 	{
-		var horseActor 	: CActor;
+		var horse 	: CNewNPC;
 		
-		horseActor = ((CActor)GetEntity());
+		horse = ((CNewNPC)GetEntity());
 		lastRider = (CActor)entity;
 		
 		
@@ -225,14 +237,26 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		
 		if( entity == thePlayer )
 		{
-			thePlayer._SetHorseCurrentlyMounted( (CNewNPC)this.GetEntity() );
+			thePlayer._SetHorseCurrentlyMounted( horse );
 			horseActor.SetInteractionPriority( IP_Prio_12 );
-		}
+			
 		
-		horseActor.AddBuffImmunity(EET_AxiiGuardMe,'BeingMounted',true);
+			((CActor)GetEntity()).SetBehaviorVariable( 'rider', 1.0f );
+			((CActor)GetEntity()).SetBehaviorVariable( 'canSlowWalk', 1.0f );
+			
+			horse.IsMountedByPlayer( true );
+		}
+		else
+		{	
+			((CActor)GetEntity()).SetBehaviorVariable( 'NPCrider', 1.0f );	
+			((CActor)GetEntity()).SetBehaviorVariable( 'canSlowWalk', 1.0f );
+		}		
+		
+		
+		horse.AddBuffImmunity(EET_AxiiGuardMe,'BeingMounted',true);
 		
 		if( entity != thePlayer )
-			horseActor.AddBuffImmunity(EET_Confusion,'BeingMounted',true);
+			horse.AddBuffImmunity(EET_Confusion,'BeingMounted',true);
 		
 		super.OnMountStarted( entity, vehicleSlot );
 	}
@@ -278,6 +302,19 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 
 		if ( entity == thePlayer && userCombatManager )
 			userCombatManager.OnDismountStarted();
+			
+		
+		
+		((CActor)GetEntity()).SetBehaviorVariable( 'reverse', 0.0f );	
+		if ( entity == thePlayer )
+		{			
+			((CActor)GetEntity()).SetBehaviorVariable( 'rider', 0.0f );
+		}
+		else
+		{
+			((CActor)GetEntity()).SetBehaviorVariable( 'NPCrider', 0.0f );
+		}
+		
 		
 		userCombatManager = NULL;
 		
@@ -292,14 +329,14 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 	
 	event OnDismountFinished( entity : CEntity, vehicleSlot : EVehicleSlot )
 	{
-		var horseActor 	: CActor;
+		var horseActor 	: CNewNPC;
 		var riderActor 	: CActor;
 		var horseComp 	: W3HorseComponent;
 		var movingAgent : CMovingAgentComponent;
 		
 		super.OnDismountFinished( entity, vehicleSlot );
 		riderActor	= (CActor)entity;
-		horseActor 	= ((CActor)GetEntity());
+		horseActor 	= (CNewNPC)GetEntity();
 		
 		
 		GetHorseMount().SetEnabled( isMountableByPlayer );
@@ -320,9 +357,9 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 			horseActor.RestoreOriginalInteractionPriority();
 			horseActor.CanPush( true );
 			horseActor.EnablePhysicalMovement( false );
+			horseActor.IsMountedByPlayer( false );
 		}
 		
-		horseActor = ((CActor)GetEntity());
 		horseActor.RemoveBuffImmunity(EET_AxiiGuardMe,'BeingMounted');
 		horseActor.RemoveBuffImmunity(EET_Confusion,'BeingMounted');
 		
@@ -367,8 +404,62 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 	
 	private var horseActor : CActor;
 	
-	public function ShouldTickInIdle() : bool
+	
+	
+	private var lookatTicker, switchTimer : int;
+	default switchTimer = 700;
+	
+	private var lookatOn : bool;
+	default lookatOn = true;
+	
+	public function NGELookatPlayer()
 	{
+		lookatOn = true;
+		switchTimer = RandRange(500,1500);
+		lookatTicker = 0;
+	}
+	
+	private var allowLookat : bool;
+	default allowLookat = true;
+	public function AllowLookat(b : bool)
+	{
+		allowLookat = b;
+	}
+	
+	
+	public function ShouldTickInIdle() : bool
+	{				
+		
+		if(IsPlayerHorse())
+		{		
+			if(theGame.IsDialogOrCutscenePlaying() || !allowLookat)
+			{
+				((CActor)GetEntity()).SetBehaviorVariable( 'lookatOn', 0.0f );
+			}
+			else
+			{
+				if(lookatTicker > switchTimer)
+				{
+					lookatTicker = 0;
+					switchTimer = RandRange(500,1500);
+					lookatOn = !lookatOn;
+				}
+		
+				if(lookatOn && InternalGetSpeed() <= 1.0)
+				{
+					((CActor)GetEntity()).SetBehaviorVectorVariable( 'lookAtTarget', thePlayer.GetWorldPosition() );
+					((CActor)GetEntity()).SetBehaviorVariable( 'lookatOn', 1.0f );
+				}
+				else
+				{
+					((CActor)GetEntity()).SetBehaviorVariable( 'lookatOn', 0.0f );
+				}
+				
+				lookatTicker += 1;
+			}
+		}
+		
+	
 		return lastRider == thePlayer;
 	}
 	
@@ -376,7 +467,7 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 	{
 		var rot : EulerAngles;
 		var lastRiderPlayer : bool;
-		
+
 		horseActor 	= (CActor)GetEntity();
 		
 		if( frontHit && backHit )
@@ -392,7 +483,7 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		{
 			currentPitch -= 5.f;
 		}
-		
+
 		physMAC.SetVirtualControllersPitch( Deg2Rad( pitchDamp.UpdateAndGet( dt, currentPitch ) ) );
 		
 		UpdateCollision();
@@ -584,7 +675,7 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		var actorEntity : CActor;
 		
 		actorEntity = (CActor)entity;
-		
+
 		if( actorEntity )
 			ShouldDealDamageToActor( actorEntity, false );
 	}
@@ -594,7 +685,7 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		var actorEntity : CActor;
 		
 		actorEntity = (CActor)entity;
-		
+
 		if( actorEntity )
 			ShouldDealDamageToActor( actorEntity, true );
 	}
@@ -608,7 +699,7 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		if( !attacker )
 			attacker = (CActor)GetEntity();
 		
-		if( IsRequiredAttitudeBetween( attacker, collidedActor, true ) ) 
+		if( IsRequiredAttitudeBetween( attacker, collidedActor, true ) || collidedActor.IsAnimal() ) 
 		{
 			if( collidedActor.IsUsingHorse() || ((CNewNPC)collidedActor).IsHorse() ) 
 			{
@@ -616,7 +707,7 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 			}
 			else
 			{
-				if( InternalGetSpeed() >= 3.0 ) 
+				if( distanceBasedSpeed >= 0.1f || (InternalGetSpeed() >= 3.0 && (thePlayer.GetHorseCombatSlowMo() || lastRider != thePlayer))  ) 
 				{
 					DealDamageToCollidedActor( attacker, collidedActor, sideCollision );
 				}
@@ -625,6 +716,13 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 	}
 	
 	
+	private var distanceBasedSpeed : float;
+	protected function SetDistanceBasedSpeed(speed : float)
+	{
+		distanceBasedSpeed = speed;	
+	}
+	
+
 	public function ReactToQuen()
 	{
 		var damageAction : W3DamageAction;
@@ -653,25 +751,38 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		var action : W3Action_Attack;
 		var horse : CActor;
 		var collisionData : CollsionActorStruct;
+				
 		
-		horse = (CActor)GetEntity();
-		itemId = horse.GetInventory().GetItemFromSlot( 'r_weapon' );
-		
-		if( !horse.GetInventory().IsIdValid( itemId ) )
-			return ;
-		
+		var damageVal : float;
+
 		if( !CanCollideWithThisActor( collidedActor ) )
 			return;
-		
-		if( !sideCollision || collidedActor.HasBuff( EET_Knockdown ) || collidedActor.HasBuff( EET_HeavyKnockdown ) )
-		{
-			action = new W3Action_Attack in theGame.damageMgr;
-			action.Init( owner, collidedActor, horse, itemId, 'attack_speed_based', horse.GetName(), EHRT_Heavy, false, false, 'attack_speed_based', AST_Jab, ASD_UpDown,true,false,false,false );
-			action.AddDamage( theGame.params.DAMAGE_NAME_PHYSICAL, 50.0 * MaxF( InternalGetSpeed(), 1 ) );
-			theGame.damageMgr.ProcessAction( action );
 			
+		horse = (CActor)GetEntity();
+		
+		
+		if(collidedActor.IsAlive())
+		{
+			itemId = horse.GetInventory().GetItemFromSlot( 'r_weapon' );
+			if( !horse.GetInventory().IsIdValid( itemId ) )
+				return ;
+			
+			action = new W3Action_Attack in theGame.damageMgr;
+			action.Init( owner, collidedActor, horse, itemId, 'attack_speed_based', horse.GetName(), EHRT_Heavy, false, false, 'attack_speed_based', AST_Horizontal, ASD_UpDown,true,false,false,false );
+							
+			if(sideCollision)
+				damageVal = 5.0 * MaxF( InternalGetSpeed(), 1 );
+			else
+				damageVal = 15.0 * MaxF( InternalGetSpeed(), 1 );
+				
+			damageVal = MinF(damageVal, collidedActor.GetMaxHealth()/15);			
+			collidedActor.SoundEvent("cmb_play_horse_kick");
+			action.AddDamage( theGame.params.DAMAGE_NAME_FORCE, damageVal );
+			theGame.damageMgr.ProcessAction( action );		
 			delete action;
 		}
+		
+			
 		collisionData.actor = collidedActor;
 		collisionData.timestamp = theGame.GetEngineTimeAsSeconds();
 		collidedActors.PushBack( collisionData );
@@ -811,6 +922,9 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		if ( user == thePlayer )
 		{
 			IssueCommandToDismount( dismountType );
+			
+			
+			((CActor)GetEntity()).SetBehaviorVariable( 'reverse', 0.0f );
 		}
 		else
 		{
@@ -872,6 +986,9 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 		{
 			HideHorse();
 		}
+		
+		
+		((CActor)GetEntity()).SetBehaviorVariable( 'headWaterDepth', 0.f );
 	}
 	
 	function HideHorse()
@@ -1046,6 +1163,19 @@ statemachine import class W3HorseComponent extends CVehicleComponent
 	{
 		return false;
 	}
+	
+	
+	private var kbWalkState : int;  default kbWalkState = 0;
+	public function GetHorseWalkState() : int
+	{
+		return kbWalkState;
+	}
+	
+	public function SetHorseWalkState(x : int)
+	{
+		kbWalkState = x;
+	}
+	
 }
 
 struct CollsionActorStruct

@@ -603,6 +603,19 @@ class CAIHimDefaults extends CAIMonsterDefaults
 };
 
 
+class CAIRedPlagueDefaults extends CAIMonsterDefaults
+{
+	function Init()
+	{
+		super.Init();
+		combatTree.params.combatLogicTree = new CAIRedPlagueCombatLogic in this;
+		combatTree.params.combatLogicTree.OnCreated();
+		deathTree = new CAIMonsterDeath in this;
+		deathTree.OnCreated();
+	}
+};
+
+
 class CAIEndriagaDefaults extends CAIMonsterDefaults
 {
 	function Init()
@@ -1765,6 +1778,18 @@ class CAIHimCombatLogic extends CAIMonsterCombatLogic
 {
 	default aiTreeName = "resdef:ai\monsters/monster_him_logic";
 
+	function Init()
+	{
+		params = new CAIMonsterCombatLogicParams in this;
+		params.OnCreated();
+	}
+};
+
+
+class CAIRedPlagueCombatLogic extends CAIMonsterCombatLogic
+{
+	default aiTreeName = "resdef:ai\monsters/monster_red_plague_logic";
+	
 	function Init()
 	{
 		params = new CAIMonsterCombatLogicParams in this;

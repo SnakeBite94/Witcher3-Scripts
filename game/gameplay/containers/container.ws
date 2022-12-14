@@ -565,8 +565,13 @@ import class W3Container extends W3LockableEntity
 		if(disableLooting)
 			return;
 			
-		if(skipInventoryPanel || usedByCiri)
+		if(skipInventoryPanel || usedByCiri || ((W3Herb)this) ) 
 		{
+			
+			if( !thePlayer.IsAnyWeaponHeld() && !thePlayer.IsHoldingItemInLHand() )
+				thePlayer.RaiseEvent('LootHerb');
+			
+
 			TakeAllItems();
 			OnContainerClosed();			
 		}

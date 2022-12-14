@@ -152,12 +152,12 @@ class W3Effect_Burning extends W3CriticalDOTEffect
 					
 					
 					glyphword12NotBurnedEntities.PushBack(ents[i]);
-					if(!IsRequiredAttitudeBetween(thePlayer, actor, true, false, false) || (RandF() < glyphword12BurningChance) || actor.HasBuff(EET_Burning))
+					if(!IsRequiredAttitudeBetween(thePlayer, actor, true, false, false) || actor.HasBuff(EET_Burning)) 
 					{
 						continue;
 					}
 					
-					actor.AddEffectCustom(params);					
+					actor.AddEffectCustom(params);		
 				}
 				
 				glyphword12Delay = 0.f;

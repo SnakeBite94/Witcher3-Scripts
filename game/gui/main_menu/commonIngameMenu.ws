@@ -18,12 +18,17 @@ class CR4CommonIngameMenu extends CR4MenuBase
 		var menuName : name;
 		
 		
-		if ((!thePlayer.IsAlive() && !thePlayer.OnCheckUnconscious()) || theGame.HasBlackscreenRequested() || theGame.IsDialogOrCutscenePlaying() )
+		if ((!thePlayer.IsAlive() && !thePlayer.OnCheckUnconscious()) || theGame.HasBlackscreenRequested() || FactsQuerySum("nge_pause_menu_disabled") > 0 ) 
 		{
 			CloseMenu();
 		}
 		else
 		{
+			
+			if(theGame.IsDialogOrCutscenePlaying())
+				theSound.SoundEvent("music_pause");
+			
+			
 			m_hideTutorial = true;
 			m_forceHideTutorial = true;
 			super.OnConfigUI();
@@ -54,6 +59,11 @@ class CR4CommonIngameMenu extends CR4MenuBase
 	
 	event  OnClosingMenu()
 	{
+		
+		if(theGame.IsDialogOrCutscenePlaying())
+			theSound.SoundEvent("music_resume");
+		
+		
 		super.OnClosingMenu();
 		
 		if (m_configUICalled)

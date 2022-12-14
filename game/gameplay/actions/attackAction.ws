@@ -205,7 +205,10 @@ class W3Action_Attack extends W3DamageAction
 		
 		if( theGame.GetDefinitionsManager().AbilityHasTag( attackName, theGame.params.ATTACK_NO_DAMAGE ) )
 		{
-			if(effectType == EET_Bleeding)
+			
+			
+			if(effectType == EET_Bleeding || effectType == EET_Bleeding1 || effectType == EET_Bleeding2 || effectType == EET_Bleeding3)
+			
 				return;
 		}
 		

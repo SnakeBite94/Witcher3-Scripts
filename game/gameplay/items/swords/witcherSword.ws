@@ -54,7 +54,15 @@ import class CWitcherSword extends CItemEntity
 		{
 			PlayEffect( 'rune_blast_long' );
 		}
+		
+		
+		waterColliderComp = GetComponent("sword_water_collider");
+		if(waterColliderComp)
+			waterColliderComp.SetEnabled(false);
+		
 	}
+	
+	private var waterColliderComp : CComponent;
 	
 	event OnItemEnhanced()
 	{
@@ -77,6 +85,10 @@ import class CWitcherSword extends CItemEntity
 		
 		Initialize( (CActor)GetParentEntity() );
 		GetWitcherPlayer().ResetPadBacklightColor();
+		
+		
+		if(waterColliderComp)
+			waterColliderComp.SetEnabled(true);
 	}
 	
 	event OnPut()
@@ -85,6 +97,10 @@ import class CWitcherSword extends CItemEntity
 		
 		StopAllEffects();
 		GetWitcherPlayer().ResetPadBacklightColor( true );
+		
+		
+		if(waterColliderComp)
+			waterColliderComp.SetEnabled(false);
 	}
 	
 	public function ApplyOil( oilAbilityName : name )

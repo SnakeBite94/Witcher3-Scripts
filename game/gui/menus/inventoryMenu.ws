@@ -93,6 +93,8 @@ class CR4InventoryMenu extends CR4MenuBase
 	private var m_hidePaperdoll	 : bool;
 	private var m_tagsFilter	 : array<name>;	
 	private var m_ignoreSaveData : bool;
+	private var m_hideSelection  : bool;
+	default m_hideSelection = false;
 	
 	private var m_selectionModeActive : bool; default m_selectionModeActive = false;
 	private var m_selectionModeItem : SItemUniqueId;
@@ -141,6 +143,9 @@ class CR4InventoryMenu extends CR4MenuBase
 		var pinTypeName 	  : name;
 		var defaultTab        : int;
 		var hasNewItems 	  : array<bool>;
+		
+		
+		var tempItem, tempItem2 : SItemUniqueId;
 		
 		m_initialSelectionsToIgnore = 2;
 		drawHorse = false;
@@ -199,6 +204,24 @@ class CR4InventoryMenu extends CR4MenuBase
 											 FlashArgString(GetLocStringByKeyExt("gui_panel_filter_item_rarity")));
 		
 		_inv = thePlayer.GetInventory();
+				
+		
+		GetWitcherPlayer().UnequipItemFromSlot(EES_Petard2,true);		
+		_inv.GetItemEquippedOnSlot( EES_Quickslot2, tempItem );
+		if(_inv.IsIdValid(tempItem) && _inv.GetItemCategory(tempItem) != 'mask')
+		{			
+			GetWitcherPlayer().UnequipItemFromSlot(EES_Quickslot2,true);
+		}	
+		
+		
+		_inv.GetItemEquippedOnSlot( EES_Quickslot1, tempItem );
+		_inv.GetItemEquippedOnSlot( EES_Quickslot2, tempItem2 );
+		if(!_inv.IsIdValid(tempItem2) && _inv.IsIdValid(tempItem) && _inv.GetItemCategory(tempItem) == 'mask')
+		{
+			GetWitcherPlayer().EquipItemInGivenSlot(tempItem, EES_Quickslot2, true, false);
+		}
+		
+			
 		_playerInv = new W3GuiPlayerInventoryComponent in this;
 		_playerInv.Initialize( _inv );
 		_playerInv.filterTagList = m_tagsFilter;
@@ -227,6 +250,7 @@ class CR4InventoryMenu extends CR4MenuBase
 		m_flashValueStorage.SetFlashString("inventory.grid.paperdoll.pockets",GetLocStringByKeyExt("panel_inventory_paperdoll_slotname_quickitems"));
 		m_flashValueStorage.SetFlashString("inventory.grid.paperdoll.potions",GetLocStringByKeyExt("panel_inventory_paperdoll_slotname_potions"));
 		m_flashValueStorage.SetFlashString("inventory.grid.paperdoll.petards",GetLocStringByKeyExt("panel_inventory_paperdoll_slotname_petards"));
+		m_flashValueStorage.SetFlashString("inventory.grid.paperdoll.masks",GetLocStringByKeyExt("item_category_mask")); 
 		m_flashValueStorage.SetFlashString("playerstats.stats.name", GetLocStringByKeyExt("panel_common_statistics_name") );
 		
 		if( _container )
@@ -537,6 +561,11 @@ class CR4InventoryMenu extends CR4MenuBase
 	event  OnTickEvent( delta : int )
 	{
 		
+		if(m_hideSelection)
+		{
+			m_hideSelection = false;
+			m_fxForceSelectItem.InvokeSelfOneArg( FlashArgInt(-1));
+		}
 	}
 	
 	
@@ -1737,6 +1766,9 @@ class CR4InventoryMenu extends CR4MenuBase
 		var itemOnSlot : SItemUniqueId;
 		var wplayer    : W3PlayerWitcher;
 		
+		
+		var isNetflixSet : bool;
+		
 		wplayer = GetWitcherPlayer();
 		
 		m_dyePreviewMode = true;
@@ -1767,7 +1799,21 @@ class CR4InventoryMenu extends CR4MenuBase
 		}
 		else
 		{
-			showNotification( GetLocStringByKeyExt( "inventory_cant_apply_dye" ) );
+			
+			if( wplayer.GetItemEquippedOnSlot( EES_Armor, itemOnSlot ) && _inv.ItemHasTag( itemOnSlot, 'NetflixSet' ) )
+				isNetflixSet = true;
+			if( wplayer.GetItemEquippedOnSlot( EES_Gloves, itemOnSlot ) && _inv.ItemHasTag( itemOnSlot, 'NetflixSet' ) )
+				isNetflixSet = true;
+			if( wplayer.GetItemEquippedOnSlot( EES_Pants, itemOnSlot ) && _inv.ItemHasTag( itemOnSlot, 'NetflixSet' ) )
+				isNetflixSet = true;
+			if( wplayer.GetItemEquippedOnSlot( EES_Boots, itemOnSlot ) && _inv.ItemHasTag( itemOnSlot, 'NetflixSet' ) )
+				isNetflixSet = true;
+				
+			if(isNetflixSet)
+				showNotification( GetLocStringByKeyExt( "inventory_cant_apply_dye_netflix" ) );
+			else
+				showNotification( GetLocStringByKeyExt( "inventory_cant_apply_dye" ) );
+			
 			OnPlaySoundEvent( "gui_global_denied" );
 		}
 	}
@@ -1954,15 +2000,27 @@ class CR4InventoryMenu extends CR4MenuBase
 	{
 		var targetList : array<int>;
 		
+		
+		var bomb, mask, usable : bool;	
+		
+		mask = _inv.IsItemMask(item);	
+		usable = _inv.IsItemUsable(item);
+		
+		
 		if( slot == EES_Quickslot1 || slot == EES_Quickslot2 )
 		{
-			targetList.PushBack(EES_Quickslot1);
-			targetList.PushBack(EES_Quickslot2);
+			if(mask)
+				targetList.PushBack(EES_Quickslot2);
+			else
+				targetList.PushBack(EES_Quickslot1);
+			
 		}	
 		else if( slot == EES_Petard1 || slot == EES_Petard2 )
 		{
 			targetList.PushBack(EES_Petard1);
-			targetList.PushBack(EES_Petard2);
+			
+			bomb = true;
+			
 		}	
 		else if( IsSlotPotionSlot(slot) )
 		{
@@ -1974,13 +2032,13 @@ class CR4InventoryMenu extends CR4MenuBase
 		
 		if (targetList.Size() > 0)
 		{
-			if (theInput.LastUsedPCInput())
+			if (theInput.LastUsedPCInput() || mask || usable || bomb)	
 			{
 				EquipToFirstEmptySocket	(item, targetList);
 			}
 			else
-			{
-				ShowSelectionMode(item, targetList);
+			{						
+				ShowSelectionMode(item, targetList);		
 			}
 			return true;
 		}
@@ -2545,10 +2603,10 @@ class CR4InventoryMenu extends CR4MenuBase
 			default:
 				return InventoryMenuTab_Weapons;
 			case EES_Petard1: 
-			case EES_Petard2:
+			
 				return InventoryMenuTab_Potions;
 			case EES_Quickslot1:
-			case EES_Quickslot2:
+			
 				if (_currentState == IMS_Stash)
 				{
 					return StashMenuTab_Default;
@@ -2881,8 +2939,11 @@ class CR4InventoryMenu extends CR4MenuBase
 			
 			if (itemCategory != 'gwint' && !isSchematic ) 
 			{
+				
 				_playerInv.SetFilterType( filterType );
 				UpdateInventoryFilter(filterType);
+				m_hideSelection = true;
+				
 				_playerInv.clearGridPosition(newItemID);
 				InventoryUpdateItem(newItemID);
 			}
@@ -4047,9 +4108,24 @@ class CR4InventoryMenu extends CR4MenuBase
 		MoveToStash( item );
 	}
 	
+	
+	function StashUpdateItem( item : SItemUniqueId )
+	{
+		var tempFlashObject		: CScriptedFlashObject;
+		var itemDataObject		: CScriptedFlashObject;
+		
+		tempFlashObject = m_flashValueStorage.CreateTempFlashObject();
+		itemDataObject = tempFlashObject.CreateFlashObject("red.game.witcher3.menus.common.ItemDataStub");
+		_horseInv.SetInventoryFlashObjectForItem(item, itemDataObject);
+		itemDataObject.SetMemberFlashInt("tabIndex", GetTabIndexForSlot(getTabFromFilter(_horseInv.GetInventoryComponent().GetFilterTypeByItem(item))));
+		m_flashValueStorage.SetFlashObject( "inventory.grid.container.itemUpdate", itemDataObject );
+	}
+	
+	
 	public function MoveToStash(item : SItemUniqueId) : void
 	{
 		var itemQuant:int;
+		var stashItemID:SItemUniqueId; 
 		
 		if( _inv.IsItemQuest( item ) || _inv.IsItemAlchemyItem( item ) )
 		{
@@ -4068,8 +4144,8 @@ class CR4InventoryMenu extends CR4MenuBase
 		{
 			InventoryRemoveItem(item, false);
 			_playerInv.clearGridPosition(item);
-			GetWitcherPlayer().GetHorseManager().MoveItemToHorse(item, 1);
-			UpdateHorseInventory();
+			stashItemID = GetWitcherPlayer().GetHorseManager().MoveItemToHorse(item, 1);	
+			StashUpdateItem(stashItemID);													
 			UpdateEncumbranceInfo();
 		}
 	}
@@ -4077,11 +4153,11 @@ class CR4InventoryMenu extends CR4MenuBase
 	public function handleMoveToStashQuantity(item : SItemUniqueId, quantity : int) : void
 	{
 		var itemQuant:int;
+		var stashItemID:SItemUniqueId; 
 		
 		itemQuant = _inv.GetItemQuantity( item );
-		
-		GetWitcherPlayer().GetHorseManager().MoveItemToHorse(item, quantity); 
-		
+		stashItemID = GetWitcherPlayer().GetHorseManager().MoveItemToHorse(item, quantity);  
+
 		if (quantity >= itemQuant)
 		{
 			InventoryRemoveItem(item, false);
@@ -4091,8 +4167,8 @@ class CR4InventoryMenu extends CR4MenuBase
 		{
 			InventoryUpdateItem(item);
 		}
-		
-		UpdateHorseInventory();
+
+		StashUpdateItem(stashItemID); 
 		UpdateEncumbranceInfo();
 	}
 	
@@ -4109,7 +4185,7 @@ class CR4InventoryMenu extends CR4MenuBase
 		if (GetWitcherPlayer().GetHorseManager().GetInventoryComponent().IsIdValid(item))
 		{
 			newItemId = GetWitcherPlayer().GetHorseManager().MoveItemFromHorse(item, GetWitcherPlayer().GetHorseManager().GetInventoryComponent().GetItemQuantity(item));
-			UpdateHorseInventory();
+			ShopRemoveItem(item);	
 			
 			filterType = _playerInv.GetFilterTypeByItem(newItemId);
 			_playerInv.SetFilterType( filterType );

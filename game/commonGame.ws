@@ -3,6 +3,15 @@
 /** 	THE WITCHER® is a trademark of CD PROJEKT S. A.
 /** 	The Witcher game is based on the prose of Andrzej Sapkowski.
 /***********************************************************************/
+enum StreamableStatus
+{
+	STREAMABLE_NOT_LOADED,
+	STREAMABLE_PENDING,
+	STREAMABLE_LOADED,
+	STREAMABLE_LOADING,
+	STREAMABLE_NOT_ACCESSABLE
+}
+
 import class CCommonGame extends CGame
 {
 	import final function EnableSubtitles( enable : bool );
@@ -77,8 +86,8 @@ import class CCommonGame extends CGame
 	
 	
 	
-	import final function LoadLastGameInit( optional suppressVideo : bool  );
-	import final function LoadGameInit( info : SSavegameInfo );
+	import final function LoadLastGameInit( optional isFromDeathScreen : bool  );
+	import final function LoadGameInit( info : SSavegameInfo, isFromDeathScreen : bool );
 
 	import final function CanStartStandaloneDLC( dlc : name ) : bool;
 	import final function InitStandaloneDLCLoading( dlc : name, difficulty : int ) : ELoadGameResult;
@@ -92,7 +101,8 @@ import class CCommonGame extends CGame
 	
 	import final function GetLoadGameProgress() : ELoadGameResult;
 
-	import final function ListSavedGames( out fileNames : array< SSavegameInfo > ) : bool; 
+	import final function ListSavedGames( out fileNames : array< SSavegameInfo >, optional saveType : int  ) : bool; 
+	import final function GetRecentListSG( out fileNames : array< SSavegameInfo > ) : bool; 
 	
 	import final function GetDisplayNameForSavedGame( savegame : SSavegameInfo ) : string;
 	
@@ -153,6 +163,9 @@ import class CCommonGame extends CGame
 	
 	
 	import final function GetGameLanguageName( out audioLang : string, out subtitleLang : string );
+	
+	
+	import final function IsLanguageArabic(): Bool;
 	
 	
 	import final function GetGameLanguageIndex( out audioLang : int, out subtitleLang : int );
@@ -290,4 +303,45 @@ import class CCommonGame extends CGame
 	import final function HideHardwareCursor() : void;
 	
 	import final function GetAchievementsDisabled() : bool;
+	
+	import final function GetIsDLSSSupported() : bool;
+
+	import final function VisitWeibo();
+	
+	import final function RequestVoiceLangDownload( lockName : string ) : void;
+	import final function GetVoiceLangDownloadStatus( lockName : string ) : int;
+	
+	
+	protected var m_voiceLangDownloadStatusListener : CScriptedFlashValueStorage;
+	public function SetVoiceLangDownloadStatusListener( listener : CScriptedFlashValueStorage )
+	{
+		m_voiceLangDownloadStatusListener = listener;
+	}
+	
+	public function UpdateSpeechLanguageSlider( language: string ): void
+	{
+		var flashObject : CScriptedFlashObject;
+		
+		flashObject = m_voiceLangDownloadStatusListener.CreateTempFlashObject();
+		flashObject.SetMemberFlashUInt( "optionTag", NameToFlashUInt( 'Virtual_Localization_speech' ) );
+		flashObject.SetMemberFlashString( "optionSelectedId", language );	
+		m_voiceLangDownloadStatusListener.SetFlashObject( "option.updateSliderValue", flashObject );
+	}
+	
+	event OnVoiceLangDownloadStatusChanged( lockName : string , status : int ) 
+	{
+		var flashObject : CScriptedFlashObject;	
+		
+		flashObject = m_voiceLangDownloadStatusListener.CreateTempFlashObject();
+		flashObject.SetMemberFlashUInt( "optionTag", NameToFlashUInt( 'Virtual_Localization_speech' ) );
+		flashObject.SetMemberFlashString( "optionValueString", lockName );
+		flashObject.SetMemberFlashBool( "optionStatus", status == STREAMABLE_LOADED );
+		
+		m_voiceLangDownloadStatusListener.SetFlashObject( "streamable.status", flashObject );
+	}
+	
+	event  OnRTChanged(RTEnabled: bool, justValidate: bool)
+	{
+		UpdateAO2CorrespondRT(RTEnabled, justValidate);
+	}
 }

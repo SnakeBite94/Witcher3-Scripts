@@ -309,13 +309,22 @@ import class CInventoryComponent extends CComponent
 		var isRelicGear : bool;
 		var level, baseLevel : int;
 		
+		var quality : int; 
+		
 		itemCategory = GetItemCategory(item);
 		itemName = GetItemName(item);
 		
 		isWitcherGear = false;
 		isRelicGear = false;
-		if ( RoundMath(CalculateAttributeValue( GetItemAttributeValue(item, 'quality' ) )) == 5 ) isWitcherGear = true;
-		if ( RoundMath(CalculateAttributeValue( GetItemAttributeValue(item, 'quality' ) )) == 4 ) isRelicGear = true;
+		
+		
+		
+		
+		
+		quality = RoundMath(CalculateAttributeValue( GetItemAttributeValue(item, 'quality' ) ) );
+		if ( quality == 5 ) isWitcherGear = true;
+		if ( quality == 4 ) isRelicGear = true;
+		
 		
 		switch(itemCategory)
 		{
@@ -348,6 +357,12 @@ import class CInventoryComponent extends CComponent
 			case 'crossbow' :
 				itemAttributes.PushBack( GetItemAttributeValue(item, 'attack_power') );
 				break;
+				
+			
+			case 'bolt' :
+				itemAttributes.PushBack( GetItemAttributeValue(item, 'SilverDamage') );
+				break;
+			
 				 
 			default :
 				break;
@@ -363,8 +378,17 @@ import class CInventoryComponent extends CComponent
 			}
 		}
 		
-		if ( isWitcherGear ) level = level - 2;
-		if ( isRelicGear ) level = level - 1;
+		
+		if ( itemCategory == 'bolt' )
+		{
+			if 		( quality == 5 ) level = level - 14;
+			else if ( quality == 4 ) level = level - 10;
+			else if ( quality == 3 ) level = level - 6;
+			else if ( quality == 2 ) level = level - 4;
+		}
+		
+		else if ( isWitcherGear ) level = level - 2;
+		else if ( isRelicGear ) level = level - 1;
 		if ( level < 1 ) level = 1;
 		if ( ItemHasTag(item, 'OlgierdSabre') ) level = level - 3;
 		if ( (isRelicGear || isWitcherGear) && ItemHasTag(item, 'EP1') ) level = level - 1;
@@ -747,6 +771,8 @@ import class CInventoryComponent extends CComponent
 			if(otherInventory == thePlayer.inv && otherInventory.GetItemQuantityByName(itemName) > 0)
 			{
 				LogAssert(false, "CInventoryComponent.GiveItemTo: cannot add singleton item as player already has this item!");
+				
+				GetWitcherPlayer().DisplayHudMessage(GetLocStringByKeyExt("panel_alchemy_exception_already_cooked")); 
 				return GetInvalidUniqueId();
 			}
 			
@@ -1626,7 +1652,7 @@ import class CInventoryComponent extends CComponent
 		}
 		else if ( itemCategory == 'crafting_schematic' )
 		{
-			player.AddCraftingSchematic( itemName );
+			player.AddCraftingSchematic( itemName, player.GetInventory().ItemHasTag(item, 'NoNotification') );
 			player.GetInventory().AddItemTag(item, 'NoShow');
 			
 		}
@@ -2557,7 +2583,7 @@ import class CInventoryComponent extends CComponent
 				i.PushBack( RoundMath(min.valueMultiplicative * 100) );
 				break;
 			case 'Runeword 10' :
-				theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Runeword 10 _Stats', 'stamina', min, max );
+				theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Runeword 10 _Stats', 'stamina_runeword_gain', min, max ); 
 				i.PushBack( RoundMath(min.valueMultiplicative * 100) );	
 				break;
 			case 'Runeword 11' :
@@ -2565,7 +2591,7 @@ import class CInventoryComponent extends CComponent
 				s.PushBack( NoTrailZeros(min.valueAdditive) );
 				break;
 			case 'Runeword 12' :
-				theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Runeword 12 _Stats', 'focus', min, max );
+				theGame.GetDefinitionsManager().GetAbilityAttributeValue( 'Runeword 12 _Stats', 'focus_runeword_gain', min, max ); 
 				f.PushBack(min.valueAdditive);
 				f.PushBack(max.valueAdditive);
 				break;
@@ -2700,6 +2726,13 @@ import class CInventoryComponent extends CComponent
 				newAttr.value = val.valueAdditive;
 				newAttr.percentageValue = false;
 			}
+			
+			else if(buffType == EET_Cat && attrs[j] == 'critical_hit_chance')
+			{
+				newAttr.value = val.valueAdditive;
+				newAttr.percentageValue = true;
+			}
+			
 			else if(val.valueMultiplicative != 0)
 			{
 				if(buffType == EET_Mutagen26)
@@ -3849,7 +3882,7 @@ import class CInventoryComponent extends CComponent
 	
 	public final function CanItemBeColored( item : SItemUniqueId) : bool
 	{
-		if ( RoundMath( CalculateAttributeValue( GetItemAttributeValue( item, 'quality' ) ) ) == 5 )
+		if ( RoundMath( CalculateAttributeValue( GetItemAttributeValue( item, 'quality' ) ) ) == 5 && !ItemHasTag(item, 'noDye') ) 
 		{
 			return true;
 		}
@@ -3864,8 +3897,31 @@ import class CInventoryComponent extends CComponent
 			ItemHasTag(item, theGame.params.ITEM_SET_TAG_LYNX) ||
 			ItemHasTag(item, theGame.params.ITEM_SET_TAG_WOLF) ||
 			ItemHasTag(item, theGame.params.ITEM_SET_TAG_RED_WOLF) ||
-			ItemHasTag( item, theGame.params.ITEM_SET_TAG_VAMPIRE ) ||
-			ItemHasTag(item, theGame.params.ITEM_SET_TAG_VIPER);
+			ItemHasTag(item, theGame.params.ITEM_SET_TAG_VAMPIRE ) ||
+			ItemHasTag(item, theGame.params.ITEM_SET_TAG_VIPER) ||
+			ItemHasTag(item, theGame.params.ITEM_SET_TAG_NETFLIX);
+	}
+
+	public final function DetectTagOfASet(item : SItemUniqueId) : name
+	{
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_BEAR) )
+			return theGame.params.ITEM_SET_TAG_BEAR;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_GRYPHON) )
+			return theGame.params.ITEM_SET_TAG_GRYPHON;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_LYNX) )
+			return theGame.params.ITEM_SET_TAG_LYNX;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_WOLF) )
+			return theGame.params.ITEM_SET_TAG_WOLF;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_RED_WOLF) )
+			return theGame.params.ITEM_SET_TAG_RED_WOLF;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_VAMPIRE) )
+			return theGame.params.ITEM_SET_TAG_VAMPIRE;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_VIPER) )
+			return theGame.params.ITEM_SET_TAG_VIPER;
+		if (ItemHasTag(item, theGame.params.ITEM_SET_TAG_NETFLIX) )
+			return theGame.params.ITEM_SET_TAG_NETFLIX;
+			
+		return '';
 	}
 	
 	public function GetArmorType(item : SItemUniqueId) : EArmorType
@@ -4023,18 +4079,28 @@ import class CInventoryComponent extends CComponent
 		
 		if(!player)
 			return slot;
+			
+		
+		if(IsItemMask( item ))
+			slot = EES_Quickslot2;
+			
+		if(slot == EES_Petard2)
+			slot == EES_Petard1;
+		
 		
 		if(IsMultipleSlot(slot))
 		{
 			if(slot == EES_Petard1 && player.IsAnyItemEquippedOnSlot(slot))
 			{
-				if(!player.IsAnyItemEquippedOnSlot(EES_Petard2))
-					slot = EES_Petard2;
+				
+				
+					
 			}
 			else if(slot == EES_Quickslot1 && player.IsAnyItemEquippedOnSlot(slot))
 			{
-				if(!player.IsAnyItemEquippedOnSlot(EES_Quickslot2))
-					slot = EES_Quickslot2;
+				
+				
+					
 			}
 			else if(slot == EES_Potion1 && player.IsAnyItemEquippedOnSlot(EES_Potion1))
 			{
@@ -4256,7 +4322,8 @@ import class CInventoryComponent extends CComponent
 		}
 		else if ( rewardItem )
 		{
-			lvl = RoundF( playerLevel + RandRangeF( 1, 0 ) );
+			
+			lvl = RoundF( playerLevel + RandRangeF( 3, 1 ) ); 
 		}
 		else if ( ItemHasTag( item, 'AutogenUseLevelRange') )
 		{
@@ -4599,6 +4666,10 @@ import class CInventoryComponent extends CComponent
 						{
 							theGame.GetGamerProfile().AddAchievement(EA_GwintCollector);
 							FactsAdd("gwint_all_cards_collected", 1, -1);
+						}
+						else 
+						{
+							theGame.GetGamerProfile().NoticeAchievementProgress(EA_GwintCollector, foundCardsStringNames.Size(), allStringNamesOfCards.Size());
 						}
 					}
 					

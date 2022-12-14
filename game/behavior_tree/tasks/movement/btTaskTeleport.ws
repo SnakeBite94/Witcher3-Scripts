@@ -135,6 +135,7 @@ class TaskTeleportAction extends IBehTreeTask
 	public var dontTeleportOutsideGuardArea						: bool;
 	public var minDistanceFromEnititesWithTag					: name;
 	public var minDistanceFromTaggedEntities					: float;
+	public var forceFacePlayer									: bool; 
 	
 	
 	protected var alreadyTeleported 							: bool;
@@ -247,9 +248,20 @@ class TaskTeleportAction extends IBehTreeTask
 		}	
 		else if ( rotateToTarget && !useCombatTarget )
 		{
-			rotation = VecToRotation( GetActionTarget().GetWorldPosition() - newPosition );
-			rotation.Pitch = 0.f;
-			rotation.Roll = 0.f;
+			
+			if(forceFacePlayer)
+			{
+				rotation = VecToRotation( thePlayer.GetWorldPosition() - newPosition );
+				rotation.Pitch = 0.f;
+				rotation.Roll = 0.f;
+			}
+			else
+			
+			{
+				rotation = VecToRotation( GetActionTarget().GetWorldPosition() - newPosition );
+				rotation.Pitch = 0.f;
+				rotation.Roll = 0.f;
+			}
 			
 			GetNPC().TeleportWithRotation( newPosition, rotation );
 		}
@@ -647,6 +659,7 @@ class TaskTeleportActionDef extends IBehTreeTaskDefinition
 	editable var dontTeleportOutsideGuardArea						: bool;
 	editable var minDistanceFromEnititesWithTag						: name;
 	editable var minDistanceFromTaggedEntities						: float;
+	editable var forceFacePlayer									: bool; 
 	
 	default minDistance = 3.0;
 	default maxDistance = 5.0;
@@ -666,6 +679,7 @@ class TaskTeleportActionDef extends IBehTreeTaskDefinition
 	default setInvulnerable = true;
 	default dontTeleportOutsideGuardArea = true;
 	default minDistanceFromTaggedEntities = 3.0;
+	default forceFacePlayer = false; 
 	
 	hint teleportToActorHeading = "OVERRIDES teleportBehindTarget and teleportOutsidePlayerFOV";
 };

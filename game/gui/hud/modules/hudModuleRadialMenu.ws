@@ -18,6 +18,13 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 	private var m_fxSetArabicAligmentMode 		  : CScriptedFlashFunction;
 	private var m_fxUpdateInputMode				  : CScriptedFlashFunction;
 	
+	
+	private var m_fxSetDescription				  : CScriptedFlashFunction;
+	private var m_fxResetPetardData				  : CScriptedFlashFunction;
+	private var selectedSign : ESignType;
+	private var lastItemDescription : string;
+	
+	
 	private var m_shown							: bool;	
 	private var m_IsPlayerCiri					: bool;
 	private var m_isDesaturated					: bool;
@@ -57,6 +64,11 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 		m_fxSetCiriItemSFF 			= flashModule.GetMemberFlashFunction( "setCiriItem" ); 
 		m_fxSetMeditationButtonEnabledSFF 		= flashModule.GetMemberFlashFunction( "SetMeditationButtonEnabled" ); 
 		m_fxSetSelectedItem 		= flashModule.GetMemberFlashFunction( "setSelectedItem" );
+		
+		
+		m_fxSetDescription 			= flashModule.GetMemberFlashFunction( "SetChoosenDescription" );
+		m_fxResetPetardData			= flashModule.GetMemberFlashFunction( "ResetPetardData" );
+		
 		
 		theInput.RegisterListener( this, 'OnRadialMenu', 'RadialMenu' );
 		theInput.RegisterListener( this, 'OnRadialMenuClose', 'CloseRadialMenu' );
@@ -173,6 +185,8 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 			{
 				HideRadialMenu();
 				thePlayer.OnRadialMenuItemChoose(_currentSelection);
+				
+				EquipLastSelectedItem(); 
 			}
 			else
 			{
@@ -181,19 +195,30 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 		}
 	}
 	
-	event  OnActivateSlot(slotName:string)
+	event  OnActivateSlot(slotName:string, isTabOrBumper:bool, swappingItems:bool) 
 	{
 		var outKeys : array< EInputKey >;
 		var player : W3PlayerWitcher;
 		player = GetWitcherPlayer();
 		
-		thePlayer.OnRadialMenuItemChoose(slotName);
+		
+		if(isTabOrBumper)
+		{
+			if(!swappingItems)
+				EquipLastSelectedItem(true);
+		}
+		else
+			thePlayer.OnRadialMenuItemChoose(slotName);
 		
 		
 	}
 	
-	event  OnRequestCloseRadial()
+	event  OnRequestCloseRadial(PCConfirmControls:bool) 
 	{
+		
+		if(PCConfirmControls)
+			EquipLastSelectedItem();
+		
 		UserClose();
 	}
 	
@@ -284,6 +309,13 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 		if( !m_shown && !theGame.IsDialogOrCutscenePlaying())
 		{
 			
+			if(!thePlayer.IsActionAllowed(EIAB_OpenInventory) && !thePlayer.IsCiri())
+			{
+				m_fxResetPetardData.InvokeSelf();
+			}
+			
+		
+			
 			thePlayer.RestoreBlockedSlots();
 			
 			
@@ -339,6 +371,10 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 			}
 			
 			theGame.GetTutorialSystem().uiHandler.OnOpeningMenu( 'RadialMenu' );
+			
+			
+			if(!thePlayer.IsCiri())
+				selectedSign = GetWitcherPlayer().GetEquippedSign();
 		}
 	}
 	
@@ -400,6 +436,14 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 			}
 			
 			theGame.GetTutorialSystem().uiHandler.OnClosingMenu( 'RadialMenu' );
+			
+			
+			if(GetWitcherPlayer().GetEquippedSign() == ST_None)
+			{
+				GetWitcherPlayer().SetEquippedSign(selectedSign);
+				m_fxUpdateFieldEquippedStateSFF.InvokeSelfFourArgs( FlashArgString( SignEnumToString(GetWitcherPlayer().GetEquippedSign())), FlashArgString(""), FlashArgString(true), FlashArgInt(0));
+			}
+			
 		}
 	}
 
@@ -433,7 +477,7 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 		itemInfoModule.ResetItems();
 	}
 	
-	function UpdateItemsIcons()
+	function UpdateItemsIcons(optional onlyCrossbow : bool)
 	{
 		var i   	: int;
 		var inv 	: CInventoryComponent;
@@ -480,44 +524,348 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 			
 			itemsDataList = m_flashValueStorage.CreateTempFlashArray();
 			
-			pocket1Slots.PushBack( EES_Petard1 );
-			pocket1Slots.PushBack( EES_Petard2 );
-			pocket2Slots.PushBack( EES_Quickslot1 );
-			pocket2Slots.PushBack( EES_Quickslot2 );
 			
-			UpdateCrossbowItemData( 7, itemsDataList );
-			UpdatePocketItemData( 6, pocket1Slots, itemsDataList );			
-			UpdatePocketItemData( 8, pocket2Slots, itemsDataList );
+			if(onlyCrossbow)
+				UpdateCrossbowItemData( 7, itemsDataList );
+			else	
+			{
+				UpdateCrossbowItemData( 7, itemsDataList );
+				UpdateNGEItemData( 6, itemsDataList, 'petard', "slot1" );
+				UpdateNGEItemData( 8, itemsDataList, 'usable', "slot3" );
+			}
+
+			
+			
+			
 			
 			m_flashValueStorage.SetFlashArray( "hud.radial.items", itemsDataList );
 			
 			
 			
-			outKeys.Clear();
-			theInput.GetCurrentKeysForAction('CastSign',outKeys);
-			m_fxUpdateFieldEquippedStateSFF.InvokeSelfFourArgs( FlashArgString( SignEnumToString(player.GetEquippedSign())), FlashArgString(""), FlashArgString(true), FlashArgInt(outKeys[0]));
+			if(!onlyCrossbow)
+			{
+				outKeys.Clear();
+				theInput.GetCurrentKeysForAction('CastSign',outKeys);
+				m_fxUpdateFieldEquippedStateSFF.InvokeSelfFourArgs( FlashArgString( SignEnumToString(player.GetEquippedSign())), FlashArgString(""), FlashArgString(true), FlashArgInt(outKeys[0]));
+			}
 		}
 	}
+
+	
+	private function UpdateNGEItemData( radialSlotId : int, out dataList : CScriptedFlashArray, itemCat : name, radialSlotName : string ) : void
+	{
+		var player 		    : W3PlayerWitcher;
+		var inv    		    : CInventoryComponent;
+		var items		    : array<SItemUniqueId>;
+		var masks		    : array<SItemUniqueId>;
+		var currentItem   	: SItemUniqueId;
+		var equippedItem  	: SItemUniqueId;
+		var selectedItem    : SItemUniqueId;
+		var itemsList		: CScriptedFlashArray;
+		var itemDataObject  : CScriptedFlashObject;
+		var containerObject : CScriptedFlashObject;
+		
+		var slotName     	: string;
+		var itemCategory   	: string;
+		var itemName	 	: string; 
+		var itemDescription : string;
+		var itemIconPath 	: string;
+
+		var itemQuality  : int;
+		var itemQuantity : int;
+		var chargesCount : int;
+		var i, count 	 : int;
+		
+		var tempItems, tempBombs	: array<SItemUniqueId>;
+		var tempItem,tempItem2 	: SItemUniqueId;
+		var tempName 	: name;
+		
+		player = GetWitcherPlayer();
+		inv = player.GetInventory();
+		selectedItem = GetWitcherPlayer().GetSelectedItemId();
+		
+		items = inv.GetItemsByCategory(itemCat);
+		count = items.Size();
+		
+		if(itemCat == 'petard' && !player.IsActionAllowed(EIAB_OpenInventory))
+		{
+			for(i=0;i<count;i+=1)
+			{			
+				tempName = inv.GetItemName(items[i]);
+				
+				switch(tempName)
+				{
+					case 'q703_paint_bomb_red':
+					case 'q703_paint_bomb_green':
+					case 'q703_paint_bomb_yellow':
+					case 'q703_paint_bomb_blue':
+					case 'q703_paint_bomb_purple':
+					case 'Snow Ball':
+					case 'Tutorial Bomb':
+					{
+						tempBombs.PushBack(items[i]);
+						if(!player.GetItemEquippedOnSlot( EES_Petard1, tempItem))
+							GetWitcherPlayer().EquipItem( items[i], EES_Petard1 );
+					}
+				}
+			}
+			
+			items = tempBombs;
+		}
+		
+		if(itemCat == 'usable')
+		{
+			for(i=0;i<count;i+=1)
+			{			
+				tempName = inv.GetItemName(items[i]);
+				
+				switch(tempName)
+				{
+					case 'FeromoneBomb':
+					case 'ciris_phylactery':
+					case 'q403_ciri_meteor':
+					case 'mq1060_right_hand_potion':
+					case 'Torch_work':
+					case 'Torch_work_right':
+					case 'mq7014_reagent':
+					case 'q703_torch_work_right':
+					case 'sq701_tutorial_shield':
+					{
+						continue;
+					}
+				}
+				
+				tempItems.PushBack(items[i]);
+			}		
+			items = tempItems;
+		}
+		
+		count = items.Size();
+		
+		itemsList = m_flashValueStorage.CreateTempFlashArray();
+		containerObject = m_flashValueStorage.CreateTempFlashObject();
+		
+		slotName = radialSlotName;
+		containerObject.SetMemberFlashInt( "slotId", radialSlotId );
+		containerObject.SetMemberFlashString( "slotName", slotName );
+		containerObject.SetMemberFlashBool( "showChangeItemText", true );
+		
+		if( !player.GetItemEquippedOnSlot( EES_Quickslot1, tempItem) && player.IsActionAllowed(EIAB_OpenInventory) && (itemCat == 'usable') && count > 0 )
+		{
+			GetWitcherPlayer().EquipItem( items[0], EES_Quickslot1 );
+			GetWitcherPlayer().SelectQuickslotItem( EES_Quickslot1 );
+		}
+		if( !player.GetItemEquippedOnSlot( EES_Petard1, tempItem) && player.IsActionAllowed(EIAB_OpenInventory) && itemCat == 'petard' && count > 0 )
+		{
+			GetWitcherPlayer().EquipItem( items[0], EES_Petard1 );
+			GetWitcherPlayer().SelectQuickslotItem( EES_Petard1 );
+		}	
+		
+		
+		player.UnequipItemFromSlot(EES_Petard2,true);		
+		player.GetItemEquippedOnSlot( EES_Quickslot2, tempItem );
+		if(inv.IsIdValid(tempItem) && inv.GetItemCategory(tempItem) != 'mask')
+		{
+			player.UnequipItemFromSlot(EES_Quickslot2,true);	
+		}		
+		
+		
+		inv.GetItemEquippedOnSlot( EES_Quickslot1, tempItem );
+		inv.GetItemEquippedOnSlot( EES_Quickslot2, tempItem2 );
+		if(!inv.IsIdValid(tempItem2) && inv.IsIdValid(tempItem) && inv.GetItemCategory(tempItem) == 'mask')
+		{
+			player.EquipItemInGivenSlot(tempItem, EES_Quickslot2, true, false);
+		}
+		
+		if(itemCat == 'usable')
+			player.GetItemEquippedOnSlot( EES_Quickslot1, equippedItem  );
+		else if(itemCat == 'petard')
+			player.GetItemEquippedOnSlot( EES_Petard1, equippedItem  );
+		
+		if( inv.IsIdValid( equippedItem  ) || count > 0 )
+		{
+			itemName = GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( equippedItem  ) );
+			itemDescription = GetLocStringByKeyExt( inv.GetItemLocalizedDescriptionByUniqueID( equippedItem  ) );
+			itemCategory = inv.GetItemCategory( equippedItem  );
+			itemQuality = inv.GetItemQuality( equippedItem  );
+			itemIconPath = inv.GetItemIconPathByUniqueID( equippedItem  );
+			
+			containerObject.SetMemberFlashString( "name", itemName );
+			containerObject.SetMemberFlashString( "description", itemDescription );
+			containerObject.SetMemberFlashString( "category", itemCategory );
+			containerObject.SetMemberFlashString( "itemIconPath", itemIconPath );
+			containerObject.SetMemberFlashInt( "quality", itemQuality );
+			containerObject.SetMemberFlashBool( "isEquipped", selectedItem == equippedItem  );
+			
+			lastItemDescription = itemDescription;
+			
+			
+			for ( i = 0; i < count; i += 1 )
+			{
+				currentItem = items[ i ];
+
+				itemDataObject = m_flashValueStorage.CreateTempFlashObject();
+				itemName = GetLocStringByKeyExt( inv.GetItemLocalizedNameByUniqueID( currentItem  ) );
+				itemDescription = GetLocStringByKeyExt( inv.GetItemLocalizedDescriptionByUniqueID( currentItem  ) );
+				itemCategory = inv.GetItemCategory( currentItem  );
+				itemQuality = inv.GetItemQuality( currentItem  );
+				itemIconPath = "img://" + inv.GetItemIconPathByUniqueID( currentItem  );
+				
+				lastItemDescription = itemDescription;
+				
+				if( inv.IsItemSingletonItem( currentItem  ) && inv.SingletonItemGetMaxAmmo( currentItem  ) > 0 )
+				{
+					chargesCount = thePlayer.inv.SingletonItemGetAmmo( currentItem  );					
+				}
+				else
+				{
+					chargesCount = -1;
+				}
+				
+				itemDataObject.SetMemberFlashString( "name", itemName );
+				itemDataObject.SetMemberFlashString( "description", itemDescription );
+				itemDataObject.SetMemberFlashString( "itemIconPath", itemIconPath );
+				itemDataObject.SetMemberFlashBool( "isEquipped", currentItem  == equippedItem  );
+				itemDataObject.SetMemberFlashInt( "charges", chargesCount );
+				itemDataObject.SetMemberFlashInt( "id", ItemToFlashUInt( currentItem  ) );
+				
+				itemsList.PushBackFlashObject( itemDataObject );
+			}
+			
+			containerObject.SetMemberFlashArray( "itemsList", itemsList );
+		}
+		else
+		{
+			containerObject.SetMemberFlashBool( "isEmpty", true );
+		}
+		
+		dataList.PushBackFlashObject( containerObject );	
+	}
+	
+	
+	
+	private var lastSelectedItem : SItemUniqueId; 
+	private var lastItemCategory : name;
+	private function EquipLastSelectedItem(optional force : bool)
+	{
+		if(force || GetWitcherPlayer().GetEquippedSign() == ST_None)
+		{
+			if(lastItemCategory == 'bomb' && _currentSelection == "slot1")
+			{
+				GetWitcherPlayer().EquipItem( lastSelectedItem, EES_Petard1);
+				GetWitcherPlayer().SelectQuickslotItem( EES_Petard1 );
+				GetWitcherPlayer().SetEquippedSign(selectedSign);
+			}
+			else if(lastItemCategory == 'usable' && _currentSelection == "slot3")
+			{
+				if( thePlayer.IsHoldingItemInLHand() && lastSelectedItem != thePlayer.currentlyEquipedItemL )
+				{
+					thePlayer.SetPlayerActionToRestore ( PATR_None );
+					thePlayer.OnUseSelectedItem();
+					thePlayer.SetLastSelectedRadialItem(lastSelectedItem);
+				}
+				else
+				{
+					GetWitcherPlayer().EquipItem( lastSelectedItem, EES_Quickslot1, false);
+					GetWitcherPlayer().SelectQuickslotItem( EES_Quickslot1 );
+				}
+				GetWitcherPlayer().SetEquippedSign(selectedSign);
+			}
+			else if(lastItemCategory == ''  && _currentSelection == "Crossbow")
+			{
+				GetWitcherPlayer().SelectQuickslotItem( EES_RangedWeapon );
+			}
+		}
+		
+		if(force)
+		{
+			if(_currentSelection == "Aard")
+				GetWitcherPlayer().SetEquippedSign(ST_Aard);
+			else if(_currentSelection == "Igni")
+				GetWitcherPlayer().SetEquippedSign(ST_Igni);
+			else if(_currentSelection == "Yrden")
+				GetWitcherPlayer().SetEquippedSign(ST_Yrden);
+			else if(_currentSelection == "Axii")
+				GetWitcherPlayer().SetEquippedSign(ST_Axii);
+			else if(_currentSelection == "Quen")
+				GetWitcherPlayer().SetEquippedSign(ST_Quen);
+		}
+	}
+	
 	
 	event OnEquipBolt( boltItemId : SItemUniqueId )
 	{
 		var inv : CInventoryComponent;
 		var equippedBolts : SItemUniqueId;
 		
-		if ( boltItemId == GetInvalidUniqueId() )
+		
+		var tempName : name;
+		var itemDescription : string;
+
+		inv = GetWitcherPlayer().GetInventory();
+		lastItemCategory = '';
+
+		if( inv.IsIdValid(boltItemId) && inv.GetItemCategory(boltItemId) == 'petard')
+		{
+			if(thePlayer.IsActionAllowed( EIAB_QuickSlots ))
+			{			
+				if(thePlayer.IsActionAllowed( EIAB_OpenInventory ))
+				{
+					lastSelectedItem = boltItemId;
+					lastItemCategory = 'bomb';
+					itemDescription = GetLocStringByKeyExt( inv.GetItemLocalizedDescriptionByUniqueID( boltItemId  ) );
+					m_fxSetDescription.InvokeSelfOneArg(FlashArgString(itemDescription));
+				}
+				else
+				{
+					tempName = inv.GetItemName(boltItemId);
+					switch(tempName)
+					{
+						case 'q703_paint_bomb_red':
+						case 'q703_paint_bomb_green':
+						case 'q703_paint_bomb_yellow':
+						case 'q703_paint_bomb_blue':
+						case 'q703_paint_bomb_purple':
+						case 'Snow Ball':
+						case 'Tutorial Bomb':
+						{
+							lastSelectedItem = boltItemId;
+							lastItemCategory = 'bomb';
+							itemDescription = GetLocStringByKeyExt( inv.GetItemLocalizedDescriptionByUniqueID( boltItemId  ) );
+							m_fxSetDescription.InvokeSelfOneArg(FlashArgString(itemDescription));
+						}
+					}
+				}
+			}
+		}
+		else if(inv.IsIdValid(boltItemId) && inv.GetItemCategory(boltItemId) == 'usable')
+		{
+			if(thePlayer.IsActionAllowed( EIAB_QuickSlots ))
+			{
+				lastSelectedItem = boltItemId;
+				lastItemCategory = 'usable';
+				itemDescription = GetLocStringByKeyExt( inv.GetItemLocalizedDescriptionByUniqueID( boltItemId  ) );
+				m_fxSetDescription.InvokeSelfOneArg(FlashArgString(itemDescription));
+			}
+		}
+		else  if ( boltItemId == GetInvalidUniqueId() )
 		{
 			
 			GetWitcherPlayer().GetItemEquippedOnSlot( EES_Bolt, equippedBolts );
-			inv = GetWitcherPlayer().GetInventory();
+			
 			if ( inv.IsIdValid( equippedBolts ) && !inv.ItemHasTag( equippedBolts, theGame.params.TAG_INFINITE_AMMO ) )
 			{
 				GetWitcherPlayer().UnequipItemFromSlot( EES_Bolt, false );
-			}
+			}	
+			
+			UpdateItemsIcons(true);
 		}
 		else if( thePlayer.inv.IsIdValid( boltItemId ) )
 		{
 			GetWitcherPlayer().EquipItem( boltItemId, EES_Bolt);
-			thePlayer.SetUpdateQuickSlotItems(true);
+			thePlayer.SetUpdateQuickSlotItems(true);	
+			
+			UpdateItemsIcons(true);
 		}
 	}
 	
@@ -585,6 +933,8 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 			containerObject.SetMemberFlashString( "itemIconPath", itemIconPath );
 			containerObject.SetMemberFlashInt( "quality", itemQuality );
 			containerObject.SetMemberFlashBool( "isEquipped", selectedItem == equippedItem );
+			
+			lastItemDescription = itemDescription;
 			
 			
 			
@@ -659,6 +1009,7 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 		}
 		else
 		{
+			containerObject.SetMemberFlashArray( "itemsList", itemsList );
 			containerObject.SetMemberFlashBool( "isEmpty", true );
 		}
 		

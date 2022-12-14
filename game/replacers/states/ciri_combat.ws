@@ -1229,6 +1229,10 @@ state CombatSword in W3ReplacerCiri extends Combat
 		parent.AddBuffImmunity_AllNegative( 'CiriSpecial', true );
 		parent.StopEffect('critical_poison');
 		
+		
+		parent.MakeInvulnerable(true);
+		
+		
 		if ( jumpBehindTarget )
 		{
 			lastTarget = (CActor)parent.slideTarget;
@@ -1320,6 +1324,10 @@ state CombatSword in W3ReplacerCiri extends Combat
 		
 		Appear();
 		parent.RemoveBuffImmunity_AllNegative( 'CiriSpecial' );
+		
+		
+		parent.MakeInvulnerable(false);
+		
 	}
 	
 	
@@ -1422,6 +1430,9 @@ state CombatSword in W3ReplacerCiri extends Combat
 		parent.SetBehaviorVariable( 'isPerformingSpecialAttack', 0.f );
 		isCompletingSpecialAttack = false;
 		parent.MakeInvulnerable(false);
+		
+		parent.RemoveBuffImmunity_AllNegative( 'CiriSpecial' );
+		
 		parent.SetBehaviorVariable( 'specialAttackInPlace', 1.f );
 		Appear();
 	}
@@ -1819,7 +1830,7 @@ state CombatSword in W3ReplacerCiri extends Combat
 	{
 		super.OnGameCameraPostTick( moveData, dt );
 		
-		if ( !parent.IsCameraLockedToTarget() && parent.GetPlayerCombatStance() == PCS_AlertNear )
+		if ( !parent.IsCameraLockedToTarget() && parent.GetPlayerCombatStance() == PCS_AlertNear && !parent.GetCmbtCamera() ) 
 		{
 			moveData.pivotRotationController.SetDesiredHeading( VecHeading(theCamera.GetCameraDirection()) );
 		}

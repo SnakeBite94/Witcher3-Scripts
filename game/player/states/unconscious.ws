@@ -58,8 +58,21 @@ state Unconscious in CR4Player extends ExtendedMovable
 	{
 		if ( killedByGuard )
 		{
-			moveData.pivotRotationController.SetDesiredHeading(parent.GetHeading()*-1);
-			moveData.pivotRotationController.SetDesiredPitch(-45);
+			
+			if(parent.GetExplCamera())
+			{
+				moveData.pivotPositionController.SetDesiredPosition( parent.GetWorldPosition() , 15.f );
+				moveData.pivotDistanceController.SetDesiredDistance( 1.5f );			
+				moveData.pivotPositionController.offsetZ = 1.15f;
+				
+				DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 6.0f, -3.1f, 1.2f ), 2.0f, dt );
+			}
+			else
+			{
+			
+				moveData.pivotRotationController.SetDesiredHeading(parent.GetHeading()*-1);
+				moveData.pivotRotationController.SetDesiredPitch(-45);
+			}
 		}
 	}
 	
@@ -160,17 +173,18 @@ state Unconscious in CR4Player extends ExtendedMovable
 	function TakeMoneyFromPlayer()
 	{
 		var amount : float = thePlayer.GetMoney();
+		var finalAmount  : float;
 		
 		switch ( theGame.GetDifficultyLevel() )
 		{
-			case EDM_Easy:		amount *= 0.25; break;
-			case EDM_Medium:	amount *= 0.50; break;
-			case EDM_Hard:		amount *= 0.75; break;
-			case EDM_Hardcore:	 break;
-			default : 			amount *= 0; 	break;
+			case EDM_Easy:		finalAmount = MinF( amount * 0.25, 750);	break;	
+			case EDM_Medium:	finalAmount = MinF( amount * 0.40, 1250);	break;	
+			case EDM_Hard:		finalAmount = MinF( amount * 0.65, 1750);	break;	
+			case EDM_Hardcore:	finalAmount = MinF( amount * 0.85, 2250);	break;	
+			default : 			finalAmount *= 0; 							break;
 		}
 		
-		thePlayer.RemoveMoney((int)amount);
+		thePlayer.RemoveMoney((int)finalAmount);
 	}
 
 	function RemoveArmor()

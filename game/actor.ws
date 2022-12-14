@@ -78,11 +78,15 @@ import abstract class CActor extends CGameplayEntity
 	protected var		canPlayHitAnim 				: bool;			default canPlayHitAnim 				= true;
 
 	
-	private editable var damageDistanceNotReducing	: float;		default	damageDistanceNotReducing	= 5.0f; 
-	private editable var deathDistNotReducing		: float;		default	deathDistNotReducing		= 7.0f; 
-	private editable var damageDistanceReducing		: float;		default	damageDistanceReducing		= 9.0f;	
-	private editable var deathDistanceReducing		: float; 		default	deathDistanceReducing		= 9.0f;	
+	
+	
+	
+	private editable var damageDistanceNotReducing	: float;		default	damageDistanceNotReducing	= 7.0f; 	
+	private editable var deathDistNotReducing		: float;		default	deathDistNotReducing		= 9.0f; 	
+	private editable var damageDistanceReducing		: float;		default	damageDistanceReducing		= 12.0f;	
+	private editable var deathDistanceReducing		: float; 		default	deathDistanceReducing		= 15.0f;	
 	private editable var fallDamageMinHealthPerc	: float; 		default	fallDamageMinHealthPerc		= 0.05f;	
+	
 	
 	
 	public var isPlayerFollower : bool;
@@ -725,6 +729,18 @@ import abstract class CActor extends CGameplayEntity
 	{
 		ragdollPullingStartPosition = ragdollPos;
 		SignalGameplayEvent( 'OnRagdollPullingStart' );
+	}
+
+	public var isInCutsceneIntro : bool;
+
+	public function IsInCutsceneIntro() : bool
+	{
+		return this.isInCutsceneIntro;
+	}
+
+	public function SetIsInCutsceneIntro( b : bool )
+	{
+		this.isInCutsceneIntro = b;
 	}
 	
 	
@@ -2380,6 +2396,9 @@ import abstract class CActor extends CGameplayEntity
 		var wasAlive : bool;
 		var hudModuleDamageType : EFloatingValueType;
 		
+		
+		var dontShowDamage : bool;
+		
 		playerAttacker = (CPlayer)action.attacker;
 		wasAlive = IsAlive();
 		
@@ -2402,8 +2421,17 @@ import abstract class CActor extends CGameplayEntity
 	
 		if(action.processedDmg.vitalityDamage > 0 && UsesVitality())
 		{
-			DrainVitality(action.processedDmg.vitalityDamage);
-			action.SetDealtDamage();
+			
+			if(this.HasAlternateQuen() && this.HasTag('mq1060_witcher'))
+			{
+				dontShowDamage = true;
+			}
+			else
+			{
+				DrainVitality(action.processedDmg.vitalityDamage);
+				action.SetDealtDamage();
+			}
+			
 		}
 		if(action.processedDmg.essenceDamage > 0 && UsesEssence())
 		{
@@ -2438,7 +2466,9 @@ import abstract class CActor extends CGameplayEntity
 				hudModuleDamageType = EFVT_None;
 			}			
 		
-			ShowFloatingValue(hudModuleDamageType, action.GetDamageDealt(), (hudModuleDamageType == EFVT_DoT) );
+			
+			if(!dontShowDamage)
+				ShowFloatingValue(hudModuleDamageType, action.GetDamageDealt(), (hudModuleDamageType == EFVT_DoT) );
 		}
 		
 		
@@ -2512,7 +2542,7 @@ import abstract class CActor extends CGameplayEntity
 		}
 		
 		
-		SignalGameplayEvent('DamageTaken');
+		SignalGameplayDamageEvent('DamageTaken', action );
 	}
 	
 	public function Revive()
@@ -2720,6 +2750,18 @@ import abstract class CActor extends CGameplayEntity
 				
 		lastWasHitTime 		= theGame.GetEngineTimeAsSeconds();
 		lastWasAttackedTime = lastWasHitTime; 
+		
+		
+		if(damageAction.DealsAnyDamage() && !damageAction.IsDoTDamage())
+		{
+			if ( !HasTag( 'NoHitFx' ) )
+			{
+				if ( theGame.GetWorld().GetWaterDepth( this.GetWorldPosition() ) > 0 )
+				{
+					if ( this.HasEffect( 'water_hit_blood' ) ) this.PlayEffect( 'water_hit_blood' );
+				}
+			}	
+		}
 		
 		return animPlayed;
 	}
@@ -3109,12 +3151,21 @@ import abstract class CActor extends CGameplayEntity
 	event OnBlockingSceneStarted( scene: CStoryScene )
 	{
 		this.SetKinematic(true);
+		SetIsInCutsceneIntro( false );
 		SetImmortalityMode( AIM_Invulnerable, AIC_Scene );
 		SetTemporaryAttitudeGroup( 'geralt_friendly', AGP_Scenes);	
+	}
+
+	event OnBlockingSceneStarted_OnIntroCutscene( scene: CStoryScene )
+	{
+		SetIsInCutsceneIntro( true ); 
+		SetImmortalityMode( AIM_Invulnerable, AIC_Scene );
+		SetTemporaryAttitudeGroup( 'geralt_friendly', AGP_Scenes);
 	}
 	
 	event OnBlockingSceneEnded( optional output : CStorySceneOutput)
 	{
+		SetIsInCutsceneIntro( false );
 		SetImmortalityMode( AIM_None, AIC_Scene );
 		ResetTemporaryAttitudeGroup( AGP_Scenes );
 	}	
@@ -5215,12 +5266,18 @@ import abstract class CActor extends CGameplayEntity
 			else
 				levelDiff = GetLevel() - actor.GetLevel();
 			
-			if( thePlayer.IsInFistFightMiniGame() || levelDiff < theGame.params.LEVEL_DIFF_DEADLY && (!playerTarget || playerTarget.IsActionAllowed(EIAB_Counter)) )
+			
+			
+			if( thePlayer.IsInFistFightMiniGame() || levelDiff < 100 && (!playerTarget || playerTarget.IsActionAllowed(EIAB_Counter)) )
+			
 				countered = actor.PerformCounterCheck(parryInfo);
 				
 			if(!countered)
 			{
-				if( thePlayer.IsInFistFightMiniGame() || levelDiff < theGame.params.LEVEL_DIFF_DEADLY && (!playerTarget || playerTarget.IsActionAllowed(EIAB_Parry)) )
+				
+				
+				if( thePlayer.IsInFistFightMiniGame() || levelDiff < 100 && (!playerTarget || playerTarget.IsActionAllowed(EIAB_Parry)) )
+				
 				{
 					if ( !thePlayer.IsInFistFightMiniGame() && levelDiff >= theGame.params.LEVEL_DIFF_HIGH )
 					{
@@ -6353,6 +6410,7 @@ import abstract class CActor extends CGameplayEntity
 		var damageValue		: float;		
 		var deathDistance	: float;
 		var damageDistance	: float;
+		var fallDamageCap 	: float; 
 		
 		var totalDamage		: float;
 		
@@ -6369,6 +6427,13 @@ import abstract class CActor extends CGameplayEntity
 			deathDistance	= deathDistNotReducing;
 			damageDistance	= damageDistanceNotReducing;
 		}
+		
+		
+		if(IsMonster())
+		{
+			deathDistance = deathDistanceReducing;
+		}
+		
 		
 		
 		if( heightDiff > deathDistance || forcedDeath )
@@ -6390,7 +6455,19 @@ import abstract class CActor extends CGameplayEntity
 		
 		else
 		{
-			dmgPerc	= MapF( heightDiff, damageDistance, deathDistance, 0.0f, 1.0f );
+			
+			
+			if ( GetCharacterStats().HasAbilityWithTag('Boss') || (W3MonsterHuntNPC)this )
+			{
+				fallDamageCap = 0.23f;
+			}
+			else
+			{
+				fallDamageCap = 0.85f;
+			}
+			
+			dmgPerc	= MapF( heightDiff, damageDistance, deathDistance, 0.0f, fallDamageCap );
+			
 			
 			
 			if( dmgPerc < 1.0f && dmgPerc >= GetHealthPercents() - fallDamageMinHealthPerc )
@@ -6449,13 +6526,17 @@ import abstract class CActor extends CGameplayEntity
 		if( momentum < 50.0 || velocity < 3.5 )
 			return false;
 	
-		damageVal = 0.25 * momentum;
+		
+		
+		
 		hitReaction = EHRT_Light;
 		
 		
 			
-		if( damageVal > 100.0 )				
-			damageVal = 100.0;
+		
+		
+		
+		
 		
 		damage = new W3DamageAction in this;
 		damage.Initialize( (CGameplayEntity)( otherBody.GetEntity() ), this, theGame, "physical_object_damage", hitReaction, CPS_Undefined, false, false, false, true );

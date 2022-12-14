@@ -268,6 +268,13 @@ state Meditation in W3PlayerWitcher extends MeditationBase
 	{
 		var rotation : EulerAngles = parent.GetWorldRotation();
 		
+		
+		if(parent.GetExplCamera())
+		{	
+			return true;
+		}
+		
+		
 		theGame.GetGameCamera().ChangePivotRotationController( 'Exploration' );
 		theGame.GetGameCamera().ChangePivotDistanceController( 'Default' );
 		theGame.GetGameCamera().ChangePivotPositionController( 'Default' );
@@ -294,6 +301,18 @@ state Meditation in W3PlayerWitcher extends MeditationBase
 	event OnGameCameraPostTick( out moveData : SCameraMovementData, dt : float )
 	{
 		var rotation : EulerAngles = parent.GetWorldRotation();
+		
+		
+		if(parent.GetExplCamera())
+		{	
+			moveData.pivotPositionController.SetDesiredPosition( parent.GetWorldPosition(), 15.f );
+			moveData.pivotDistanceController.SetDesiredDistance( 1.5f );
+		
+			moveData.pivotPositionController.offsetZ = 1.3f;
+			DampVectorSpring( moveData.cameraLocalSpaceOffset, moveData.cameraLocalSpaceOffsetVel, Vector( 0.5f, -0.3f, 0.25f ), 1.5f, dt );
+			return true;
+		}
+		
 		
 		if( cameraIsLeavingState )
 		{

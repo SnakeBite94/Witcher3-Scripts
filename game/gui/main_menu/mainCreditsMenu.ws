@@ -22,7 +22,8 @@ enum CreditsIndex
 {
 	CreditsIndex_Wither3 = 0,
 	CreditsIndex_Ep1 = 1,
-	CreditsIndex_Ep2 = 2
+	CreditsIndex_Ep2 = 2,
+	CreditsIndex_Witcher3_NG = 3
 }
 
 class CR4MainCreditsMenu extends CR4MenuBase
@@ -100,6 +101,10 @@ class CR4MainCreditsMenu extends CR4MenuBase
 		{
 			theSound.SoundEvent( 'mus_credits_usm' );
 		}
+		else if( theGame.GetGuiManager().GetLastRequestedCreditsIndex() == CreditsIndex_Witcher3_NG )
+		{
+			theSound.SoundEvent( 'mus_credits_usm' );
+		}
 
 		theGame.ResetFadeLock( "CR4MainCreditsMenu" );
 		theGame.FadeInAsync(0.5);
@@ -143,6 +148,10 @@ class CR4MainCreditsMenu extends CR4MenuBase
 		else if (theGame.GetGuiManager().GetLastRequestedCreditsIndex() == CreditsIndex_Ep2)
 		{
 			creditsCSV = LoadCSV("gameplay\globals\credits_ep2.csv");
+		}
+		else if (theGame.GetGuiManager().GetLastRequestedCreditsIndex() == CreditsIndex_Witcher3_NG)
+		{
+			creditsCSV = LoadCSV("gameplay\globals\credits_ng.csv");
 		}
 		
 		rowsCount = creditsCSV.GetNumRows();
@@ -223,11 +232,11 @@ class CR4MainCreditsMenu extends CR4MenuBase
 			fontColor = "<font face=\"$CreditsFont\" size=\"54\" color=\"#000000\">";
 			if( creditsSections[currentSectionID].sectionName != "" )
 			{
-				tempString += GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].sectionName) + htmlNewline;
+				tempString += StrUpperUTF( GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].sectionName) ) + htmlNewline;
 			}
 			for( i = 0; i < creditsSections[currentSectionID].positionNames.Size(); i += 1 )
 			{
-				tempString += GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].positionNames[i]) + "   " + fontColor + creditsSections[currentSectionID].crewNames[i] + "</font>";
+				tempString += StrUpperUTF( GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].positionNames[i]) ) + "   " + fontColor + creditsSections[currentSectionID].crewNames[i] + "</font>";
 				if ( i < creditsSections[currentSectionID].positionNames.Size() - 1 )
 				{
 					tempString += htmlNewline;
@@ -260,6 +269,10 @@ class CR4MainCreditsMenu extends CR4MenuBase
 				{
 					theSound.SoundEvent( 'mus_credits_secondary' );
 				}
+				else if ( theGame.GetGuiManager().GetLastRequestedCreditsIndex() == CreditsIndex_Witcher3_NG )
+				{
+					theSound.SoundEvent( 'mus_credits_secondary' );
+				}
 			}
 			
 			tempString = "";
@@ -271,11 +284,11 @@ class CR4MainCreditsMenu extends CR4MenuBase
 				
 				if (legalTextOverride && creditsSections[currentSectionID].positionNames[i] == "credits_LEGAL_NOTICE")
 				{
-					tempString += "<font face=\"$CreditsFont\" color=\"#FFFFFF\">" + GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].positionNames[i]) + "</font> ";
+					tempString += "<font face=\"$CreditsFont\" color=\"#FFFFFF\">" + StrUpperUTF( GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].positionNames[i]) ) + "</font> ";
 				}
 				else
 				{
-					tempString += GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].positionNames[i]) + " " + "<font face=\"$CreditsFont\" size=\"28\" color=\"#FFFFFF\">" + creditsSections[currentSectionID].crewNames[i] + "</font> ";
+					tempString += StrUpperUTF( GetLocalizedPositionAndDepartment(creditsSections[currentSectionID].positionNames[i]) ) + " " + "<font face=\"$CreditsFont\" size=\"28\" color=\"#FFFFFF\">" + creditsSections[currentSectionID].crewNames[i] + "</font> ";
 				}
 				
 				currentScrollingTextLineCount += 1;
@@ -382,6 +395,7 @@ class CR4MainCreditsMenu extends CR4MenuBase
 	event OnCloseMenu()
 	{
 		var ingameMenu : CR4IngameMenu;
+		var menuType : int;
 		
 		guiManager.CancelFlashbackVideo();
 
@@ -393,19 +407,21 @@ class CR4MainCreditsMenu extends CR4MenuBase
 			
 			if (ingameMenu)
 			{
-				if ( theGame.GetDLCManager().IsEP2Available() )
+				menuType = theGame.GetChosenMainMenuType();
+				switch ( menuType )
 				{
-					theSound.SoundEvent('stop_music' );
-					theSound.SoundEvent('play_music_toussaint' );
-					theSound.SoundEvent('mus_main_menu_ep2');
-				}
-				else if ( theGame.GetDLCManager().IsEP1Available() )
-				{
-					theSound.SoundEvent('mus_main_menu_theme_ep1');
-				}
-				else
-				{
-					theSound.SoundEvent('mus_main_menu_theme');
+					case 1:
+						theSound.SoundEvent('mus_main_menu_theme_ep1');
+						break;
+					case 2:
+						theSound.SoundEvent('stop_music' );
+						theSound.SoundEvent('play_music_toussaint' );
+						theSound.SoundEvent('mus_main_menu_ep2');
+						break;
+					case 0:
+					default:
+						theSound.SoundEvent('mus_main_menu_theme');
+						break;
 				}
 			}
 			else

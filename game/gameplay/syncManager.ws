@@ -1726,6 +1726,57 @@ statemachine class W3SyncAnimationManager
 				
 				break;	
 			}
+			
+			case 'PetHorse':
+			{
+				rot = slave.GetWorldRotation();
+				
+				
+				if( VecDistance(master.GetWorldPosition(), slave.GetWorldPosition() + VecConeRand(slave.GetHeading() - 90, 0, 1,1)) < VecDistance(master.GetWorldPosition(), slave.GetWorldPosition() + VecConeRand(slave.GetHeading() + 90, 0, 1,1))  )
+				{
+					
+					masterSequencePart.animation			= 'high_standing_determined_gesture_preparing_horse1b';	
+					masterSequencePart.finalPosition		= slave.GetWorldPosition() + VecConeRand(slave.GetHeading() - 90, 0, 0.82,0.82) + VecConeRand(slave.GetHeading(), 0, 0.5,0.5);				
+					masterSequencePart.finalHeading			= rot.Yaw + 95;
+				}
+				else
+				{
+					
+					masterSequencePart.animation			= 'high_standing_determined_gesture_preparing_horse2';	
+					masterSequencePart.finalPosition		= slave.GetWorldPosition() + VecConeRand(slave.GetHeading() + 90, 0, 0.82,0.82) + VecConeRand(slave.GetHeading(), 0, 0.3,0.3);				
+					masterSequencePart.finalHeading			= rot.Yaw - 90;
+				}
+				
+				masterSequencePart.syncType				= AMST_SyncBeginning;
+				masterSequencePart.syncEventName		= 'SyncEvent';
+				masterSequencePart.shouldSlide			= true;
+				masterSequencePart.shouldRotate			= true;
+				masterSequencePart.blendInTime			= 0.5f;
+				masterSequencePart.blendOutTime			= 1.2f;
+				masterSequencePart.sequenceIndex		= 0;
+				
+				masterDef.parts.PushBack( masterSequencePart );
+				masterDef.entity						= master;
+				masterDef.manualSlotName				= 'GAMEPLAY_SLOT';
+				masterDef.freezeAtEnd					= false;
+				
+				
+				slaveSequencePart.animation				= 'horse_breathing_slow';			
+				slaveSequencePart.syncType				= AMST_SyncBeginning;
+				slaveSequencePart.syncEventName			= 'SyncEvent';
+				slaveSequencePart.shouldSlide			= false;
+				slaveSequencePart.blendInTime			= 0.5f;
+				slaveSequencePart.blendOutTime			= 0.5f;
+				slaveSequencePart.sequenceIndex			= 0;
+				
+				slaveDef.parts.PushBack( slaveSequencePart );
+				slaveDef.entity							= slave;
+				slaveDef.manualSlotName					= 'EXP_SLOT';
+				slaveDef.freezeAtEnd					= false;
+				
+				break;
+			}	
+			
 			default : 
 			{
 				syncInstances.Remove( syncInstance );
@@ -1833,18 +1884,32 @@ statemachine class W3SyncAnimationManager
 		if ( thePlayer.GetCombatIdleStance() <= 0.f )
 		{
 			syncAnimsNames.PushBack( 'man_finisher_02_lp' );
+			syncAnimsNames.PushBack( 'man_finisher_02_lp' );
+			syncAnimsNames.PushBack( 'man_finisher_02_lp' );
+			syncAnimsNames.PushBack( 'man_finisher_02_lp' );
 			syncAnimsNames.PushBack( 'man_finisher_04_lp' );
 			syncAnimsNames.PushBack( 'man_finisher_06_lp' );
 			syncAnimsNames.PushBack( 'man_finisher_07_lp' );
+			syncAnimsNames.PushBack( 'man_finisher_07_lp' );
+			syncAnimsNames.PushBack( 'man_finisher_08_lp' );
 			syncAnimsNames.PushBack( 'man_finisher_08_lp' );
 			size = dlcFinishersLeftSide.Size();
 			for( i = 0; i < size; i += 1 )
 			{
 				syncAnimsNames.PushBack( dlcFinishersLeftSide[i].finisherAnimName );
+				if(dlcFinishersLeftSide[i].finisherAnimName == 'man_finisher_dlc_legs_lp')
+				{
+					syncAnimsNames.PushBack( dlcFinishersLeftSide[i].finisherAnimName );
+					syncAnimsNames.PushBack( dlcFinishersLeftSide[i].finisherAnimName );
+					syncAnimsNames.PushBack( dlcFinishersLeftSide[i].finisherAnimName );
+				}
 			}			
 		}
 		else
 		{
+			syncAnimsNames.PushBack( 'man_finisher_01_rp' );
+			syncAnimsNames.PushBack( 'man_finisher_01_rp' );
+			syncAnimsNames.PushBack( 'man_finisher_01_rp' );
 			syncAnimsNames.PushBack( 'man_finisher_01_rp' );
 			syncAnimsNames.PushBack( 'man_finisher_03_rp' );
 			syncAnimsNames.PushBack( 'man_finisher_05_rp' );
@@ -1852,6 +1917,22 @@ statemachine class W3SyncAnimationManager
 			for( i = 0; i < size; i += 1 )
 			{
 				syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+				if(dlcFinishersRightSide[i].finisherAnimName == 'man_finisher_dlc_legs_rp')
+				{
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+				}
+				else if(dlcFinishersRightSide[i].finisherAnimName == 'man_finisher_dlc_head_rp')
+				{
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+				}
+				else if(dlcFinishersRightSide[i].finisherAnimName == 'man_finisher_dlc_neck_rp')
+				{
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+					syncAnimsNames.PushBack( dlcFinishersRightSide[i].finisherAnimName );
+				}
 			}
 		}
 		return syncAnimsNames[ RandRange( syncAnimsNames.Size(),  0 ) ];
@@ -1880,8 +1961,8 @@ statemachine class W3SyncAnimationManager
 		
 		animation.animation = animationName;
 		animation.priority = CAP_Highest;
-		animation.blendIn = 0.f;
-		animation.blendOut = 0.5f;
+		animation.blendIn = 0.5f;	
+		animation.blendOut = 1.5f;	
 		animation.weight = 1.f;
 		animation.speed	= 1.0f;
 		animation.reset = true;

@@ -195,6 +195,21 @@ class W3EffectManager
 				{
 					((W3Effect_Bleeding)carrier).OnDamageDealt( action.DealsAnyDamage() );	
 				}
+				
+				
+				if(carrier && carrier.GetEffectType() == EET_Bleeding1)
+				{
+					((W3Effect_Bleeding1)carrier).OnDamageDealt( action.DealsAnyDamage() );	
+				}
+				if(carrier && carrier.GetEffectType() == EET_Bleeding2)
+				{
+					((W3Effect_Bleeding2)carrier).OnDamageDealt( action.DealsAnyDamage() );	
+				}
+				if(carrier && carrier.GetEffectType() == EET_Bleeding3)
+				{
+					((W3Effect_Bleeding3)carrier).OnDamageDealt( action.DealsAnyDamage() );	
+				}
+				
 			}
 
 			delete action;
@@ -670,7 +685,7 @@ class W3EffectManager
 		var signEffects : array < CBaseGameplayEffect >;
 		var npcOwner : CNewNPC;
 		var mutagen : W3Mutagen13_Effect;
-		var i : int;
+		var i, doneBuffs : int;
 		var effectType : EEffectType;
 		
 		effectType = effect.GetEffectType();
@@ -693,9 +708,17 @@ class W3EffectManager
 		}
 		
 		
-		if(owner == thePlayer && IsBuffShrine(effectType) && HasAllShrineBuffs())
+		if(owner == thePlayer && IsBuffShrine(effectType))
 		{
-			theGame.GetGamerProfile().AddAchievement(EA_PowerOverwhelming);
+			doneBuffs = CountShrineBuffs();
+			if (doneBuffs >= 5) 
+			{
+				theGame.GetGamerProfile().AddAchievement(EA_PowerOverwhelming);
+			}
+			else
+			{
+				theGame.GetGamerProfile().NoticeAchievementProgress(EA_PowerOverwhelming, doneBuffs);
+			}
 		}
 		
 		
@@ -756,6 +779,11 @@ class W3EffectManager
 		var damages : array<SRawDamage>;
 		var forceOnNpc : bool;
 		var npcStorage : CBaseAICombatStorage;
+		
+		
+		var j, focus : int;
+		var woundsAll : array<EEffectType>;
+		var woundsToAdd : array<EEffectType>;
 		
 		
 		if(effectType == EET_Undefined)
@@ -833,6 +861,46 @@ class W3EffectManager
 		
 		if(srcName == "" && creat)
 			srcName = creat.GetName();
+		
+		
+		
+		if( effectType == EET_Bleeding && (CNewNPC)owner && GetWitcherPlayer().IsSetBonusActive( EISB_Wolf_2 ) )
+		{
+			focus = (int) thePlayer.GetStat(BCS_Focus);
+			
+			woundsAll.PushBack( EET_Bleeding1 );
+			woundsAll.PushBack( EET_Bleeding2 );
+			woundsAll.PushBack( EET_Bleeding3 );
+			
+			if( !owner.HasBuff( EET_Bleeding ) )
+			{
+				
+			}
+			else
+			{
+				woundsToAdd = woundsAll;
+				woundsAll.PushBack( EET_Bleeding );
+				
+				if( owner.HasBuff( EET_Bleeding1 ) ) { woundsToAdd.Remove( EET_Bleeding1 ); j += 1; }
+				if( owner.HasBuff( EET_Bleeding2 ) ) { woundsToAdd.Remove( EET_Bleeding2 ); j += 1; }
+				if( owner.HasBuff( EET_Bleeding3 ) ) { woundsToAdd.Remove( EET_Bleeding3 ); j += 1; }
+				
+				
+				if( focus > j )
+				{
+					effectType = woundsToAdd[ RandRange( woundsToAdd.Size() ) ];
+				}
+				
+				
+				
+				else
+				{
+					effectType = woundsAll[ RandRange( focus, 0 ) ];
+				}
+				
+			}
+		}
+		
 		
 		
 		
@@ -1495,6 +1563,8 @@ class W3EffectManager
 		}
 		else if(signType == ST_Igni)
 		{
+			chance = ( 1 + LogF( sp ) ) / theGame.params.MAX_SPELLPOWER_ASSUMED - res; 
+		
 			if(witcher)
 			{
 				if(witcher.CanUseSkill(S_Magic_s09))
@@ -2047,12 +2117,12 @@ class W3EffectManager
 			theGame.ReleaseNoSaveLock(criticalStateSaveLockId);
 	}
 	
-	private final function HasAllShrineBuffs() : bool
+	private final function CountShrineBuffs() : int
 	{
-		var aard, axii, igni, quen, yrden : bool;
-		var i : int;
+		var i, doneBuffs : int;
 		var type : EEffectType;
 		
+		doneBuffs = 0;
 		for(i=0; i<effects.Size(); i+=1)
 		{
 			type = effects[i].GetEffectType();
@@ -2060,26 +2130,26 @@ class W3EffectManager
 			switch(type)
 			{
 				case EET_ShrineAard:
-					aard = true;
+					doneBuffs += 1;
 					break;
 				case EET_ShrineAxii:
-					axii = true;
+					doneBuffs += 1;
 					break;
 				case EET_ShrineIgni:
-					igni = true;
+					doneBuffs += 1;
 					break;
 				case EET_ShrineQuen:
-					quen = true;
+					doneBuffs += 1;
 					break;
 				case EET_ShrineYrden:
-					yrden = true;
+					doneBuffs += 1;
 					break;					
 				default:
 					break;
 			}			
 		}
 
-		return aard && axii && yrden && quen && igni;
+		return doneBuffs;
 	}
 	
 	public final function HasAnyMutagen23ShrineBuff() : bool

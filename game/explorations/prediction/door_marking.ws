@@ -20,6 +20,7 @@ enum EDoorMarkingState
 class CDoorMarking extends CScriptedComponent
 {	
 	private editable	var	changeCamera	: bool;				default	changeCamera	= true;
+	private editable	var doCalculations	: bool;				default doCalculations  = true; 
 	
 	private				var	calculated		: bool;
 	private				var	pointA			: Vector;
@@ -89,6 +90,15 @@ class CDoorMarking extends CScriptedComponent
 	
 	public function GetClosestPointAndNormal( out outPoint : Vector, out outNormal : Vector )
 	{
+		
+		if(!doCalculations)
+		{
+			outPoint = Vector(0,0,-9000);
+			outNormal = Vector(0,0,0);
+			return;
+		}
+		
+	
 		
 		if( !calculated )
 		{
