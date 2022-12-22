@@ -1658,6 +1658,11 @@ class CR4IngameMenu extends CR4MenuBase
 		
 		
 		
+		
+		if ( optionName == 'CrossProgression' )
+		{
+			theGame.UpdateCrossProgressionValue( optionValue );
+		}
 	}
 
 	private function setLocksOnPresetChanged():void
@@ -2812,7 +2817,7 @@ class CR4IngameMenu extends CR4MenuBase
 		var dataFlashArray 	: CScriptedFlashArray;
 		
 		l_DataFlashObject = m_flashValueStorage.CreateTempFlashObject();
-		l_DataFlashObject.SetMemberFlashBool( "isUserSignedIn",  theGame.IsGalaxyUserSignedIn() );
+		l_DataFlashObject.SetMemberFlashBool( "isUserSignedIn", theGame.IsGalaxyUserSignedIn() && theGame.GetInGameConfigWrapper().GetVarValue( 'Gameplay', 'CrossProgression' ) == "true" );
 		m_flashValueStorage.SetFlashObject( "ingamemenu.gogCloudState", l_DataFlashObject );
 		
 		dataFlashArray = m_flashValueStorage.CreateTempFlashArray();
@@ -2840,7 +2845,7 @@ class CR4IngameMenu extends CR4MenuBase
 		var dataFlashArray 	: CScriptedFlashArray;
 		
 		l_DataFlashObject = m_flashValueStorage.CreateTempFlashObject();
-		l_DataFlashObject.SetMemberFlashBool( "isUserSignedIn",  theGame.IsGalaxyUserSignedIn() );
+		l_DataFlashObject.SetMemberFlashBool( "isUserSignedIn", theGame.IsGalaxyUserSignedIn() && theGame.GetInGameConfigWrapper().GetVarValue( 'Gameplay', 'CrossProgression' ) == "true" );
 		m_flashValueStorage.SetFlashObject( "ingamemenu.gogCloudState", l_DataFlashObject );
 		
 		dataFlashArray = m_flashValueStorage.CreateTempFlashArray();

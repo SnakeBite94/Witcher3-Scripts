@@ -57,7 +57,7 @@ function IngameMenu_PopulateSaveDataForSlotType(flashStorageUtility : CScriptedF
 		currentData.SetMemberFlashString("filename", "");
 		currentData.SetMemberFlashInt("tag", -1);
 		currentData.SetMemberFlashUInt("saveType", saveType);
-		if(theGame.IsGalaxyUserSignedIn()) {
+		if(theGame.IsGalaxyUserSignedIn() && theGame.GetInGameConfigWrapper().GetVarValue( 'Gameplay', 'CrossProgression')) {
 			currentData.SetMemberFlashUInt("cloudStatus", SCO_Uploading);
 		} else {
 			currentData.SetMemberFlashUInt("cloudStatus", SCO_Local);
