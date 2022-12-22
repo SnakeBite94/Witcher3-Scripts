@@ -3324,7 +3324,15 @@ class W3PlayerAbilityManager extends W3AbilityManager
 		
 		GetWitcherPlayer().levelManager.NGE_SetUsedPoints( used - Abs(skillPointsToAdd - free) );
 		GetWitcherPlayer().levelManager.NGE_SetFreePoints( skillPointsToAdd );
+		
+		
+		SetToxicityOffset(0.f);
 	}	
+	
+	public function GetToxicityOffset() : float
+	{
+		return toxicityOffset;
+	}
 	
 	
 	

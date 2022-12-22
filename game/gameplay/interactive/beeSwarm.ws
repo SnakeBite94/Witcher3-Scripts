@@ -224,6 +224,11 @@ statemachine class W3BeeSwarm extends CGameplayEntity
 		var damageAction : W3DamageAction;
 		var damage : float;
 		
+		
+		var tempBuffParams : SCustomEffectParams;
+		var tempDamageVal : SAbilityAttributeValue;
+		
+		
 		if(buffParams.effectType == EET_Undefined)
 		{
 			specParams = new W3BuffDoTParams in this;
@@ -247,7 +252,18 @@ statemachine class W3BeeSwarm extends CGameplayEntity
 			victims[i].timeInSwarm += deltaTime;
 			
 			
-			if( (CPlayer)victims[i].actor || CeilF(victims[i].timeInSwarm) % 15 < 3)
+			
+			if( victims[i].actor != thePlayer && GetAttitudeBetween(victims[i].actor, thePlayer) == AIA_Friendly )
+			{
+				if( CeilF(victims[i].timeInSwarm) % 15 < 3 && !victims[i].actor.HasBuff(EET_Swarm) )
+				{
+					tempBuffParams = buffParams;
+					tempBuffParams.effectValue = tempDamageVal;
+					victims[i].actor.AddEffectCustom(tempBuffParams);
+				}
+			}
+			else 
+			if((CPlayer)victims[i].actor || CeilF(victims[i].timeInSwarm) % 15 < 3)
 			{
 				victims[i].actor.AddEffectCustom(buffParams);
 			}
@@ -323,6 +339,22 @@ statemachine class W3BeeSwarm extends CGameplayEntity
 	{
 		victims.Clear();
 	}
+	
+	
+	public function RemoveVictimsBuff()
+	{
+		var i : int;
+		
+		for(i=0;i<victims.Size();i+=1)
+		{
+			victims[i].actor.RemoveBuff(EET_Swarm, , "bee_swarm");
+			
+			
+			if(GetAttitudeBetween(victims[i].actor, thePlayer) == AIA_Friendly)
+				victims[i].actor.SetBehaviorVariable( 'bCriticalStopped', 1 );
+		}
+	}
+	
 }
 
 

@@ -1183,7 +1183,8 @@ statemachine import class CNewNPC extends CActor
 		
 		if ( stats.HasAbility( 'NPCDoNotGainBoost' ) ) return;
 		if ( stats.HasAbility( 'animal_rat_base' ) ) return;
-		if ( stats.HasAbility( 'mon_djinn' ) ) return;	
+		if ( stats.HasAbility( 'mon_djinn' ) ) return;
+		if ( IsAnimal() ) return;
 		
 		
 		levelBonusesComputedAtPlayerLevel = playerLevel;

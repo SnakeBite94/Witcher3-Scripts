@@ -140,6 +140,22 @@ import statemachine class CBeehiveEntity extends W3Container
 			delete damage;
 		}
 	}
+	
+	
+	timer function DestoryBeesAfterTime(dt:float,id:int)
+	{
+		activeAttachedBees.RemoveVictimsBuff();
+		activeMovingBees.RemoveVictimsBuff();
+		activeAttachedBees.Enable(false);
+		activeMovingBees.Enable(false);
+		activeAttachedBees.DestroyAfter(0.5f);
+		activeMovingBees.DestroyAfter(0.2f);
+		beesActivated = false;	
+		
+		RemoveTag(theGame.params.TAG_SOFT_LOCK);
+		GetComponent('Loot').SetEnabled(true);
+	}
+	
 }
 
 state HangingIntact in CBeehiveEntity
@@ -282,6 +298,8 @@ state Falling in CBeehiveEntity
 
 state OnGroundActive in CBeehiveEntity
 {
+	var hitByAard : bool;	
+	
 	event OnEnterState( prevStateName : name )
 	{
 		var entityTemplate : CEntityTemplate;
@@ -319,7 +337,6 @@ state OnGroundActive in CBeehiveEntity
 			attachedBees.SetVelocity(0);
 			attachedBees.damageVal = parent.damageVal;
 			attachedBees.SetSwarmOriginEntity(parent);
-			
 		}
 	}
 
@@ -350,6 +367,12 @@ state OnGroundActive in CBeehiveEntity
 				parent.GotoState( 'OnGroundBurned' );
 			}
 		}
+		
+		
+		if(!hitByAard)
+			parent.AddTimer('DestoryBeesAfterTime', 20.f,false); 
+		hitByAard = true;
+		
 	}
 }
 

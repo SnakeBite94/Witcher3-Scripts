@@ -715,7 +715,12 @@ class CR4HudModuleRadialMenu extends CR4HudModuleBase
 				
 				if( inv.IsItemSingletonItem( currentItem  ) && inv.SingletonItemGetMaxAmmo( currentItem  ) > 0 )
 				{
-					chargesCount = thePlayer.inv.SingletonItemGetAmmo( currentItem  );					
+					
+					if(itemCat == 'petard')
+						chargesCount = thePlayer.inv.SingletonItemGetAmmo( equippedItem  );	
+					else
+					
+						chargesCount = thePlayer.inv.SingletonItemGetAmmo( currentItem  );	
 				}
 				else
 				{

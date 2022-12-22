@@ -408,6 +408,12 @@ statemachine class W3PlayerWitcher extends CR4Player
 			AddTimer('NGE_FixSkillPoints',1.0f,false);
 		}
 		
+		
+		if( ((W3PlayerAbilityManager)abilityManager).GetToxicityOffset() > ((W3PlayerAbilityManager)abilityManager).GetStatMax(BCS_Toxicity)) 
+		{
+			((W3PlayerAbilityManager)abilityManager).SetToxicityOffset(0.f);
+		}
+		
 
 		m_quenHitFxTTL = 0;
 		m_TriggerEffectDisablePending = false;

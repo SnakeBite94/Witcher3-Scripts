@@ -29,5 +29,8 @@ class W3Potion_WhiteHoney extends CBaseGameplayEffect
 			exceptions.PushBack(wolf);
 			
 		thePlayer.RemoveAllPotionEffects(exceptions);
+		
+		
+		((W3PlayerAbilityManager)GetWitcherPlayer().abilityManager).SetToxicityOffset(0.f);
 	}
 }
