@@ -25,8 +25,7 @@ class CR4MapMenu extends CR4MenuBase
 	private var m_fxSetDefaultPosition : CScriptedFlashFunction;
 	private var m_fxShowToussaint : CScriptedFlashFunction;
 	private var m_fxSetHighlightedMapPin : CScriptedFlashFunction;
-	
-	
+		
 	private var m_fxSetInitialFilters : CScriptedFlashFunction;
 	
 	private var m_userPinNames : array< name >;
